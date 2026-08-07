@@ -3,29 +3,41 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
+    /**
+     * Matikan auto-wrap transaction Laravel. Wajib untuk migration ini karena
+     * ada try/catch di sekitar DDL (dropForeign) yang mungkin gagal (constraint
+     * tidak ada). Di Postgres, 1 statement gagal dalam transaction akan
+     * memblokir semua statement berikutnya sampai di-rollback, walau exception-nya
+     * sudah ditangkap try/catch di level PHP. MySQL tidak punya masalah ini.
+     */
+    public $withinTransaction = false;
+
     public function up(): void
     {
-        // Hapus foreign key yang bermasalah jika ada
-        try {
-            DB::statement('ALTER TABLE `lke_dokumen_kriteria` DROP FOREIGN KEY `lke_dokumen_kriteria_kriteria_id_foreign`');
-        } catch (\Exception $e) {}
-        
-        try {
-            DB::statement('ALTER TABLE `lke_dokumen_kriteria` DROP FOREIGN KEY `lke_dokumen_kriteria_perangkat_daerah_id_foreign`');
-        } catch (\Exception $e) {}
-        
-        try {
-            DB::statement('ALTER TABLE `lke_dokumen_kriteria` DROP FOREIGN KEY `lke_dokumen_kriteria_uploaded_by_foreign`');
-        } catch (\Exception $e) {}
+        // Hapus foreign key yang bermasalah jika ada (portable Schema Builder)
+        foreach ([
+            'lke_dokumen_kriteria_kriteria_id_foreign',
+            'lke_dokumen_kriteria_perangkat_daerah_id_foreign',
+            'lke_dokumen_kriteria_uploaded_by_foreign',
+        ] as $constraint) {
+            try {
+                Schema::table('lke_dokumen_kriteria', function (Blueprint $table) use ($constraint) {
+                    $table->dropForeign($constraint);
+                });
+            } catch (\Exception $e) {
+                // Constraint tidak ada, lanjut saja
+            }
+        }
 
         // Ubah tipe data kolom agar sesuai
-        DB::statement('ALTER TABLE `lke_dokumen_kriteria` MODIFY `kriteria_id` INT(10) UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE `lke_dokumen_kriteria` MODIFY `perangkat_daerah_id` INT(10) UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE `lke_dokumen_kriteria` MODIFY `uploaded_by` INT(10) UNSIGNED NOT NULL');
+        Schema::table('lke_dokumen_kriteria', function (Blueprint $table) {
+            $table->unsignedInteger('kriteria_id')->change();
+            $table->unsignedInteger('perangkat_daerah_id')->change();
+            $table->unsignedInteger('uploaded_by')->change();
+        });
 
         // Tambah index untuk performa query
         Schema::table('lke_dokumen_kriteria', function (Blueprint $table) {
@@ -34,32 +46,34 @@ return new class extends Migration
         });
 
         // Tambah foreign key baru
-        DB::statement('ALTER TABLE `lke_dokumen_kriteria` 
-            ADD CONSTRAINT `lke_dokumen_kriteria_kriteria_id_foreign` 
-            FOREIGN KEY (`kriteria_id`) REFERENCES `lke_kriteria`(`id`) ON DELETE CASCADE');
-            
-        DB::statement('ALTER TABLE `lke_dokumen_kriteria` 
-            ADD CONSTRAINT `lke_dokumen_kriteria_perangkat_daerah_id_foreign` 
-            FOREIGN KEY (`perangkat_daerah_id`) REFERENCES `perangkat_daerah`(`id`) ON DELETE CASCADE');
-            
-        DB::statement('ALTER TABLE `lke_dokumen_kriteria` 
-            ADD CONSTRAINT `lke_dokumen_kriteria_uploaded_by_foreign` 
-            FOREIGN KEY (`uploaded_by`) REFERENCES `pengguna`(`id`) ON DELETE CASCADE');
+        Schema::table('lke_dokumen_kriteria', function (Blueprint $table) {
+            $table->foreign('kriteria_id', 'lke_dokumen_kriteria_kriteria_id_foreign')
+                ->references('id')->on('lke_kriteria')
+                ->onDelete('cascade');
+
+            $table->foreign('perangkat_daerah_id', 'lke_dokumen_kriteria_perangkat_daerah_id_foreign')
+                ->references('id')->on('perangkat_daerah')
+                ->onDelete('cascade');
+
+            $table->foreign('uploaded_by', 'lke_dokumen_kriteria_uploaded_by_foreign')
+                ->references('id')->on('pengguna')
+                ->onDelete('cascade');
+        });
     }
 
     public function down(): void
     {
-        try {
-            DB::statement('ALTER TABLE `lke_dokumen_kriteria` DROP FOREIGN KEY `lke_dokumen_kriteria_kriteria_id_foreign`');
-        } catch (\Exception $e) {}
-        
-        try {
-            DB::statement('ALTER TABLE `lke_dokumen_kriteria` DROP FOREIGN KEY `lke_dokumen_kriteria_perangkat_daerah_id_foreign`');
-        } catch (\Exception $e) {}
-        
-        try {
-            DB::statement('ALTER TABLE `lke_dokumen_kriteria` DROP FOREIGN KEY `lke_dokumen_kriteria_uploaded_by_foreign`');
-        } catch (\Exception $e) {}
+        foreach ([
+            'lke_dokumen_kriteria_kriteria_id_foreign',
+            'lke_dokumen_kriteria_perangkat_daerah_id_foreign',
+            'lke_dokumen_kriteria_uploaded_by_foreign',
+        ] as $constraint) {
+            try {
+                Schema::table('lke_dokumen_kriteria', function (Blueprint $table) use ($constraint) {
+                    $table->dropForeign($constraint);
+                });
+            } catch (\Exception $e) {}
+        }
 
         Schema::table('lke_dokumen_kriteria', function (Blueprint $table) {
             $table->dropIndex('lke_dokumen_filter_index');

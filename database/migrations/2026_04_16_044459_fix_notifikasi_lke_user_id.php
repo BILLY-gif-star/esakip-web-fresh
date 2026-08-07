@@ -14,28 +14,31 @@ return new class extends Migration
             ->where('perangkat_daerah_id', 27)
             ->where('role', 'operator')
             ->value('id');
-        
+
         if ($targetUserId) {
             // 2. Pindahkan semua notifikasi LKE ke user_id yang benar
             DB::table('notifikasi')
                 ->where('tipe', 'lke_penilaian')
                 ->update(['user_id' => $targetUserId]);
         }
-        
+
         // 3. Alternatif: pindahkan berdasarkan nama_opd
         DB::table('notifikasi')
             ->where('tipe', 'lke_penilaian')
             ->where('nama_opd', 'BADAN KEPEGAWAIAN DAERAH')
             ->update(['user_id' => 2]);
-        
+
         // 4. Hapus notifikasi duplikat yang tidak perlu (opsional)
+        // Catatan: pakai havingRaw('COUNT(*) > 1') bukan having('count', '>', 1),
+        // karena Postgres tidak izinkan HAVING merujuk ke alias kolom SELECT
+        // (beda dengan MySQL yang membolehkannya).
         $duplicates = DB::table('notifikasi')
             ->where('tipe', 'lke_penilaian')
             ->select('pesan', DB::raw('COUNT(*) as count'))
             ->groupBy('pesan')
-            ->having('count', '>', 1)
+            ->havingRaw('COUNT(*) > 1')
             ->pluck('pesan');
-        
+
         foreach ($duplicates as $pesan) {
             $ids = DB::table('notifikasi')
                 ->where('tipe', 'lke_penilaian')
@@ -43,7 +46,7 @@ return new class extends Migration
                 ->orderBy('id')
                 ->pluck('id')
                 ->toArray();
-            
+
             // Hapus duplikat, sisakan yang pertama
             array_shift($ids); // Hapus ID pertama dari array
             if (!empty($ids)) {

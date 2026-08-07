@@ -6,73 +6,62 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Matikan auto-wrap transaction Laravel. Wajib untuk migration ini karena
+     * ada try/catch di sekitar DDL (dropForeign) yang mungkin gagal (constraint
+     * tidak ada). Di Postgres, 1 statement gagal dalam transaction akan
+     * memblokir semua statement berikutnya sampai di-rollback, walau exception-nya
+     * sudah ditangkap try/catch di level PHP. MySQL tidak punya masalah ini.
+     */
+    public $withinTransaction = false;
+
+    /**
+     * Daftar foreign key yang perlu diubah jadi ON DELETE CASCADE.
+     * Format: [table, constraint_name, column, referenced_table, referenced_column]
+     */
+    private array $foreignKeys = [
+        ['lke_dokumen_kriteria', 'lke_dokumen_kriteria_uploaded_by_foreign', 'uploaded_by', 'pengguna', 'id'],
+        ['notifikasi', 'notifikasi_user_id_pengguna_foreign', 'user_id', 'pengguna', 'id'],
+        ['percakapan', 'percakapan_admin_user_id_foreign', 'admin_user_id', 'pengguna', 'id'],
+        ['percakapan', 'percakapan_opd_user_id_foreign', 'opd_user_id', 'pengguna', 'id'],
+        ['pesan', 'pesan_pengirim_id_foreign', 'pengirim_id', 'pengguna', 'id'],
+    ];
+
     public function up(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        
-        // 1. TABEL lke_dokumen_kriteria
-        DB::statement('ALTER TABLE lke_dokumen_kriteria DROP FOREIGN KEY lke_dokumen_kriteria_uploaded_by_foreign');
-        DB::statement('ALTER TABLE lke_dokumen_kriteria 
-            ADD CONSTRAINT lke_dokumen_kriteria_uploaded_by_foreign 
-            FOREIGN KEY (uploaded_by) REFERENCES pengguna(id) ON DELETE CASCADE');
+        foreach ($this->foreignKeys as [$table, $constraint, $column, $refTable, $refColumn]) {
+            try {
+                Schema::table($table, function (Blueprint $blueprint) use ($constraint) {
+                    $blueprint->dropForeign($constraint);
+                });
+            } catch (\Exception $e) {
+                // Constraint tidak ada, lanjut saja
+            }
 
-        // 2. TABEL notifikasi
-        DB::statement('ALTER TABLE notifikasi DROP FOREIGN KEY notifikasi_user_id_pengguna_foreign');
-        DB::statement('ALTER TABLE notifikasi 
-            ADD CONSTRAINT notifikasi_user_id_pengguna_foreign 
-            FOREIGN KEY (user_id) REFERENCES pengguna(id) ON DELETE CASCADE');
-
-        // 3. TABEL percakapan (admin_user_id)
-        DB::statement('ALTER TABLE percakapan DROP FOREIGN KEY percakapan_admin_user_id_foreign');
-        DB::statement('ALTER TABLE percakapan 
-            ADD CONSTRAINT percakapan_admin_user_id_foreign 
-            FOREIGN KEY (admin_user_id) REFERENCES pengguna(id) ON DELETE CASCADE');
-
-        // 4. TABEL percakapan (opd_user_id)
-        DB::statement('ALTER TABLE percakapan DROP FOREIGN KEY percakapan_opd_user_id_foreign');
-        DB::statement('ALTER TABLE percakapan 
-            ADD CONSTRAINT percakapan_opd_user_id_foreign 
-            FOREIGN KEY (opd_user_id) REFERENCES pengguna(id) ON DELETE CASCADE');
-
-        // 5. TABEL pesan
-        DB::statement('ALTER TABLE pesan DROP FOREIGN KEY pesan_pengirim_id_foreign');
-        DB::statement('ALTER TABLE pesan 
-            ADD CONSTRAINT pesan_pengirim_id_foreign 
-            FOREIGN KEY (pengirim_id) REFERENCES pengguna(id) ON DELETE CASCADE');
-
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            Schema::table($table, function (Blueprint $blueprint) use ($constraint, $column, $refTable, $refColumn) {
+                $blueprint->foreign($column, $constraint)
+                    ->references($refColumn)->on($refTable)
+                    ->onDelete('cascade');
+            });
+        }
     }
 
     public function down(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        
         // Kembalikan ke RESTRICT (tanpa CASCADE)
-        DB::statement('ALTER TABLE lke_dokumen_kriteria DROP FOREIGN KEY lke_dokumen_kriteria_uploaded_by_foreign');
-        DB::statement('ALTER TABLE lke_dokumen_kriteria 
-            ADD CONSTRAINT lke_dokumen_kriteria_uploaded_by_foreign 
-            FOREIGN KEY (uploaded_by) REFERENCES pengguna(id)');
+        foreach ($this->foreignKeys as [$table, $constraint, $column, $refTable, $refColumn]) {
+            try {
+                Schema::table($table, function (Blueprint $blueprint) use ($constraint) {
+                    $blueprint->dropForeign($constraint);
+                });
+            } catch (\Exception $e) {
+                // Constraint tidak ada, lanjut saja
+            }
 
-        DB::statement('ALTER TABLE notifikasi DROP FOREIGN KEY notifikasi_user_id_pengguna_foreign');
-        DB::statement('ALTER TABLE notifikasi 
-            ADD CONSTRAINT notifikasi_user_id_pengguna_foreign 
-            FOREIGN KEY (user_id) REFERENCES pengguna(id)');
-
-        DB::statement('ALTER TABLE percakapan DROP FOREIGN KEY percakapan_admin_user_id_foreign');
-        DB::statement('ALTER TABLE percakapan 
-            ADD CONSTRAINT percakapan_admin_user_id_foreign 
-            FOREIGN KEY (admin_user_id) REFERENCES pengguna(id)');
-
-        DB::statement('ALTER TABLE percakapan DROP FOREIGN KEY percakapan_opd_user_id_foreign');
-        DB::statement('ALTER TABLE percakapan 
-            ADD CONSTRAINT percakapan_opd_user_id_foreign 
-            FOREIGN KEY (opd_user_id) REFERENCES pengguna(id)');
-
-        DB::statement('ALTER TABLE pesan DROP FOREIGN KEY pesan_pengirim_id_foreign');
-        DB::statement('ALTER TABLE pesan 
-            ADD CONSTRAINT pesan_pengirim_id_foreign 
-            FOREIGN KEY (pengirim_id) REFERENCES pengguna(id)');
-        
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            Schema::table($table, function (Blueprint $blueprint) use ($constraint, $column, $refTable, $refColumn) {
+                $blueprint->foreign($column, $constraint)
+                    ->references($refColumn)->on($refTable);
+            });
+        }
     }
 };
