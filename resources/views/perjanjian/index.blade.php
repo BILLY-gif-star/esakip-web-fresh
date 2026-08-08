@@ -329,13 +329,6 @@
   .pk-flash.err { background:rgba(239,68,68,.12);  border:1px solid rgba(239,68,68,.3);  color:#f87171; }
 </style>
 
-{{-- Flash messages --}}
-@if(session('success'))
-  <div class="pk-flash ok">✅ {{ session('success') }}</div>
-@endif
-@if(session('error'))
-  <div class="pk-flash err">❌ {{ session('error') }}</div>
-@endif
 
 {{-- Info bar --}}
 <div class="pk-info">

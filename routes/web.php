@@ -18,6 +18,19 @@ use App\Http\Controllers\LkipController;
 use App\Http\Controllers\JuknisController;
 use App\Http\Controllers\RekapanHasilLkeController;
 use App\Http\Controllers\DokumenHasilController;
+use App\Http\Controllers\PerjanjianCascadingController;
+use App\Http\Controllers\PerjanjianTemplateController;
+use App\Http\Controllers\PerjanjianDokumenController;
+
+
+Route::get('/debug-env', function () {
+    return [
+        'app_key_via_env' => env('APP_KEY'),
+        'app_key_via_config' => config('app.key'),
+        'env_file_exists' => file_exists(base_path('.env')),
+        'env_file_readable' => is_readable(base_path('.env')),
+    ];
+});
 
 // ════════════════════════════════════════════════════════════
 //  AUTH (publik — tidak butuh login)
@@ -175,23 +188,23 @@ Route::middleware('auth.esakip')->group(function () {
     //  PERJANJIAN KINERJA
     // ════════════════════════════════════════════════════════
     Route::prefix('perjanjian')->name('perjanjian.')->group(function () {
-        Route::get('/cascading',               [PerjanjianController::class, 'cascadingIndex'])->name('cascading');
-        Route::post('/upload-cascading',       [PerjanjianController::class, 'uploadCascading'])->name('upload.cascading');
-        Route::post('/review-cascading/{id}',  [PerjanjianController::class, 'reviewCascading'])->name('review.cascading');
-        Route::delete('/hapus-cascading/{id}', [PerjanjianController::class, 'hapusCascading'])->name('hapus.cascading');
+        Route::get('/cascading',               [PerjanjianCascadingController::class, 'index'])->name('cascading');
+        Route::post('/upload-cascading',       [PerjanjianCascadingController::class, 'upload'])->name('upload.cascading');
+        Route::post('/review-cascading/{id}',  [PerjanjianCascadingController::class, 'review'])->name('review.cascading');
+        Route::delete('/hapus-cascading/{id}', [PerjanjianCascadingController::class, 'hapus'])->name('hapus.cascading');
 
         Route::get('/{jenis}',                 [PerjanjianController::class, 'index'])->name('index');
-        Route::post('/upload-template',        [PerjanjianController::class, 'uploadTemplate'])->name('upload.template');
-        Route::get('/download-template/{id}',  [PerjanjianController::class, 'downloadTemplate'])->name('download.template');
-        Route::get('/preview-template/{id}',   [PerjanjianController::class, 'previewTemplate'])->name('preview.template');
-        Route::delete('/hapus-template/{id}',  [PerjanjianController::class, 'hapusTemplate'])->name('hapus.template');
-        Route::post('/upload-dokumen',         [PerjanjianController::class, 'uploadDokumen'])->name('upload.dokumen');
-        Route::get('/lihat/{id}',              [PerjanjianController::class, 'lihatDokumen'])->name('lihat');
-        Route::get('/preview/{id}',            [PerjanjianController::class, 'previewDokumen'])->name('preview');
-        Route::post('/review/{id}',            [PerjanjianController::class, 'reviewDokumen'])->name('review');
-        Route::delete('/hapus/{id}',           [PerjanjianController::class, 'hapusDokumen'])->name('hapus');
-        Route::post('/hapus/{id}',             [PerjanjianController::class, 'hapusDokumen']);  // fallback non-DELETE
-        Route::put('/edit/{id}',               [PerjanjianController::class, 'editDokumen'])->name('edit');
+        Route::post('/upload-template',        [PerjanjianTemplateController::class, 'upload'])->name('upload.template');
+        Route::get('/download-template/{id}',  [PerjanjianTemplateController::class, 'download'])->name('download.template');
+        Route::get('/preview-template/{id}',   [PerjanjianTemplateController::class, 'preview'])->name('preview.template');
+        Route::delete('/hapus-template/{id}',  [PerjanjianTemplateController::class, 'hapus'])->name('hapus.template');
+        Route::post('/upload-dokumen',         [PerjanjianDokumenController::class, 'upload'])->name('upload.dokumen');
+        Route::get('/lihat/{id}',              [PerjanjianDokumenController::class, 'lihat'])->name('lihat');
+        Route::get('/preview/{id}',            [PerjanjianDokumenController::class, 'preview'])->name('preview');
+        Route::post('/review/{id}',            [PerjanjianDokumenController::class, 'review'])->name('review');
+        Route::delete('/hapus/{id}',           [PerjanjianDokumenController::class, 'hapus'])->name('hapus');
+        Route::post('/hapus/{id}',             [PerjanjianDokumenController::class, 'hapus']);
+        Route::put('/edit/{id}',               [PerjanjianDokumenController::class, 'edit'])->name('edit');
     });
 
     // ════════════════════════════════════════════════════════
@@ -230,6 +243,7 @@ Route::middleware('auth.esakip')->group(function () {
         Route::post('/upload',       [JuknisController::class, 'upload'])->name('upload');
         Route::post('/update/{id}',  [JuknisController::class, 'update'])->name('update');
         Route::post('/delete/{id}',  [JuknisController::class, 'delete'])->name('delete');
+        Route::delete('/delete/{id}', [JuknisController::class, 'delete']); 
         Route::get('/download/{id}', [JuknisController::class, 'download'])->name('download');
         Route::get('/preview/{id}',  [JuknisController::class, 'preview'])->name('preview');
     });
