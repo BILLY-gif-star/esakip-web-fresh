@@ -33,12 +33,14 @@ Route::get('/debug-env', function () {
 });
 
 // ════════════════════════════════════════════════════════════
-//  AUTH (publik — tidak butuh login)
+//  PUBLIK — tidak butuh login
 // ════════════════════════════════════════════════════════════
-Route::get('/',        [AuthController::class, 'showLogin'])->name('login');
-Route::get('/welcome', function () {return view('welcome');})->name('welcome');
-Route::get('/login',   [AuthController::class, 'showLogin'])->name('login.get');
-Route::post('/login',  [AuthController::class, 'login'])->name('login.post');
+Route::get('/', function () {
+    return view('welcome'); // landing page kamu
+})->name('welcome');
+
+Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/daftar', [AuthController::class, 'daftar'])->name('daftar');
@@ -150,8 +152,7 @@ Route::middleware('auth.esakip')->group(function () {
         Route::get('/rekap',                 [KlasterController::class, 'rekap'])->name('rekap');
         Route::get('/hasil-lke-gabungan',    [KlasterEvaluasiController::class, 'hasilLkeGabungan'])->name('hasil.lke.gabungan');
 
-        // ⚠️  Route evaluator assign-opd DIHAPUS dari sini
-        //     (sudah ada di group admin. di bawah — jangan duplikat)
+     
     });
 
     // ════════════════════════════════════════════════════════
