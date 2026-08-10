@@ -36,8 +36,10 @@ Route::get('/debug-env', function () {
 //  AUTH (publik — tidak butuh login)
 // ════════════════════════════════════════════════════════════
 Route::get('/',        [AuthController::class, 'showLogin'])->name('login');
+Route::get('/welcome', function () {return view('welcome');})->name('welcome');
 Route::get('/login',   [AuthController::class, 'showLogin'])->name('login.get');
 Route::post('/login',  [AuthController::class, 'login'])->name('login.post');
+
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/daftar', [AuthController::class, 'daftar'])->name('daftar');
 
