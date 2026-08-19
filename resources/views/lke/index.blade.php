@@ -586,7 +586,7 @@
           <th style="width:110px;">Nilai</th>
           <th style="width:240px;">Jawaban (Predikat)</th>
           <th style="width:160px;">Catatan</th>
-          <th style="width:160px;">Komentar Admin</th>
+          <th style="width:160px;">Komentar Evaluator</th>
           <th style="width:200px;">Evidence &amp; Dokumen</th>
         </tr>
       </thead>

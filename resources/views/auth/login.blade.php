@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<title>Login — E-SAKIPKU NTT</title>
+<title>Login — e-SAKIPKU NTT</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -316,7 +316,7 @@ body::before{
     <div class="badge-logo">
       <img src="{{ asset('assets/logo_ntt.png') }}" onerror="this.style.display='none'" alt="Logo NTT">
     </div>
-    <span class="badge-top-text">E-SAKIPKU</span>
+    <span class="badge-top-text">e-SAKIPKU</span>
     <span class="badge-year">NTT</span>
   </div>
 
@@ -356,7 +356,7 @@ body::before{
     </div>
 
     <h1 class="form-title">Masuk ke<br><span>Sistem</span></h1>
-    <p class="form-desc">Masukkan kredensial Anda untuk mengakses E-SAKIPKU Provinsi NTT.</p>
+    <p class="form-desc">Masukkan kredensial Anda untuk mengakses e-SAKIPKU Provinsi NTT.</p>
 
     @if(session('daftar_sukses'))
       <div class="msg-success">
