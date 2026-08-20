@@ -44,6 +44,36 @@
       position: relative;
     }
 
+    /* ── Foto tim sebagai background tetap (fixed) seluruh halaman ──
+       Trik: foto punya latar HITAM solid. background-blend-mode:screen
+       membuat area hitam otomatis melebur jadi warna background-color
+       di baliknya (biru), tanpa perlu edit/hapus background foto manual. */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background-color: #12467E;
+      background-image: url('{{ asset('assets/staff.jpeg') }}');
+      background-blend-mode: screen;
+      background-size: cover;
+      background-position: center 12%;
+      background-repeat: no-repeat;
+    }
+    /* Scrim biru tua di atas foto — dibuat gradasi (bukan rata), supaya
+       area hero (paling atas) fotonya paling terlihat jelas, sementara
+       makin ke bawah tetap terjaga kontrasnya buat teks section. */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg,
+        rgba(9,35,58,.38) 0%,
+        rgba(9,35,58,.52) 50%,
+        rgba(9,35,58,.66) 100%);
+    }
+
     a { color: inherit; text-decoration: none; }
 
     /* ── Motif Garis Tenun Ikat (3 warna brand) ──────── */
@@ -104,6 +134,7 @@
     .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
     .nav-links a { font-size: 14px; color: rgba(255,255,255,.85); font-weight: 500; transition: all .2s; }
     .nav-links a:hover { color: var(--accent-light); }
+    .nav-links a:focus-visible { outline: 2px solid var(--accent-light); outline-offset: 3px; border-radius: 2px; }
 
     .topbar-login {
       font-family: 'IBM Plex Mono', monospace;
@@ -127,6 +158,18 @@
       transform: translateY(-2px);
       font-weight: 600;
     }
+    .topbar-login:focus-visible {
+      outline: 2px solid var(--accent-light);
+      outline-offset: 3px;
+    }
+
+    /* ── Icon inline (pengganti emoji) ──────────────── */
+    .ic {
+      width: 15px; height: 15px;
+      flex-shrink: 0;
+      vertical-align: -3px;
+    }
+    .ic-lg { width: 24px; height: 24px; vertical-align: middle; }
 
     /* ── Common Section Formatting ── */
     section { max-width: 1180px; margin: 0 auto; padding: 72px 28px; }
@@ -136,20 +179,20 @@
       font-size: 11.5px;
       letter-spacing: 1.8px;
       text-transform: uppercase;
-      color: var(--secondary-dark);
+      color: #FFFFFF;
       margin-bottom: 10px;
       font-weight: 600;
-      background: rgba(74,144,184,.1);
+      background: rgba(255,255,255,.14);
       display: inline-block;
       padding: 4px 14px;
       border-radius: 20px;
-      border: 1px solid rgba(74,144,184,.25);
+      border: 1px solid rgba(255,255,255,.28);
     }
-    .section-title { font-family: 'Fraunces', serif; font-size: 34px; color: var(--primary); margin-bottom: 12px; font-weight: 600; }
-    .section-desc { font-size: 15.5px; color: var(--text-soft); line-height: 1.6; }
+    .section-title { font-family: 'Fraunces', serif; font-size: 30px; color: #FFFFFF; margin-bottom: 10px; font-weight: 600; line-height: 1.2; }
+    .section-desc { font-size: 15px; color: rgba(255,255,255,.75); line-height: 1.65; }
 
-    #alur .section-eyebrow { color: var(--accent-dark); background: rgba(217,164,65,.12); border-color: rgba(217,164,65,.3); }
-    #faq .section-eyebrow { color: var(--primary-light); background: rgba(15,61,94,.08); border-color: rgba(15,61,94,.2); }
+    #alur .section-eyebrow { color: var(--accent-light); background: rgba(217,164,65,.18); border-color: rgba(217,164,65,.4); }
+    #faq .section-eyebrow { color: #FFFFFF; background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.28); }
 
     /* ── Hero Section ────────────────────────────── */
     .hero-wrap {
@@ -165,7 +208,7 @@
       font-size: 11px;
       letter-spacing: 1.6px;
       text-transform: uppercase;
-      color: var(--secondary-dark);
+      color: var(--accent-light);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -183,12 +226,13 @@
       font-size: clamp(38px, 4.5vw, 58px);
       line-height: 1.1;
       letter-spacing: -.015em;
-      color: var(--primary);
+      color: #FFFFFF;
       margin: 0 0 24px;
+      text-shadow: 0 2px 18px rgba(0,0,0,.25);
     }
-    h1 em { font-style: italic; font-weight: 600; color: var(--secondary-dark); }
-    .lede { font-size: 16px; line-height: 1.75; color: var(--text-soft); margin: 0 0 36px; }
-    .lede strong { color: var(--primary); font-weight: 600; }
+    h1 em { font-style: italic; font-weight: 600; color: var(--accent-light); }
+    .lede { font-size: 16px; line-height: 1.75; color: rgba(255,255,255,.82); margin: 0 0 36px; }
+    .lede strong { color: #FFFFFF; font-weight: 600; }
 
     .hero-actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
     .btn-primary {
@@ -204,12 +248,16 @@
       box-shadow: 0 18px 32px -8px rgba(15,61,94,.45);
       background: var(--primary-deep);
     }
+    .btn-primary:focus-visible {
+      outline: 2px solid var(--secondary-light);
+      outline-offset: 3px;
+    }
 
-    .hero-note { font-size: 12.5px; color: var(--text-soft); }
+    .hero-note { font-size: 12.5px; color: rgba(255,255,255,.72); display: flex; align-items: center; gap: 6px; }
     .hero-note strong {
-      color: var(--primary); font-weight: 600;
-      background: rgba(15,61,94,.08); padding: 3px 10px;
-      border-radius: 12px; border: 1px solid rgba(15,61,94,.18);
+      color: #FFFFFF; font-weight: 600;
+      background: rgba(255,255,255,.14); padding: 3px 10px;
+      border-radius: 12px; border: 1px solid rgba(255,255,255,.28);
     }
 
     /* ── Dossier Card ── */
@@ -278,15 +326,15 @@
       width: 52px; height: 52px;
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 26px; margin-bottom: 18px;
+      margin-bottom: 18px;
     }
-    .feature-card:nth-child(1) .feature-icon-wrapper { background: rgba(15,61,94,.1); }
-    .feature-card:nth-child(2) .feature-icon-wrapper { background: rgba(74,144,184,.14); }
-    .feature-card:nth-child(3) .feature-icon-wrapper { background: rgba(217,164,65,.16); }
-    .feature-card:nth-child(4) .feature-icon-wrapper { background: rgba(44,110,147,.14); }
+    .feature-card:nth-child(1) .feature-icon-wrapper { background: rgba(15,61,94,.1); color: var(--primary); }
+    .feature-card:nth-child(2) .feature-icon-wrapper { background: rgba(74,144,184,.14); color: var(--secondary-dark); }
+    .feature-card:nth-child(3) .feature-icon-wrapper { background: rgba(217,164,65,.16); color: var(--accent-dark); }
+    .feature-card:nth-child(4) .feature-icon-wrapper { background: rgba(44,110,147,.14); color: var(--secondary-dark); }
 
-    .feature-card h3 { font-size: 18px; color: var(--primary); margin-bottom: 10px; font-family: 'Fraunces', serif; font-weight: 600; }
-    .feature-card p { font-size: 13.5px; color: var(--text-soft); line-height: 1.65; }
+    .feature-card h3 { font-size: 17px; color: var(--primary); margin-bottom: 9px; font-family: 'Fraunces', serif; font-weight: 600; line-height: 1.3; }
+    .feature-card p { font-size: 14px; color: var(--text-soft); line-height: 1.6; }
 
     /* ── Workflow Steps ───────────────────────────── */
     .workflow-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
@@ -320,8 +368,8 @@
     .step-card:nth-child(2) .step-badge { background: var(--secondary); }
     .step-card:nth-child(3) .step-badge { background: var(--primary); }
     .step-card:nth-child(4) .step-badge { background: var(--secondary-dark); }
-    .step-card h4 { font-size: 17px; color: var(--primary); margin-bottom: 10px; font-weight: 600; }
-    .step-card p { font-size: 13.5px; color: var(--text-soft); line-height: 1.6; }
+    .step-card h4 { font-size: 17px; color: var(--primary); margin-bottom: 9px; font-weight: 600; line-height: 1.3; }
+    .step-card p { font-size: 14px; color: var(--text-soft); line-height: 1.6; }
 
     /* ── Slideshow ────────────────────────────────── */
     .slideshow {
@@ -344,7 +392,12 @@
       align-items: flex-end;
     }
     .slide.active { opacity: 1; }
-    .slide-caption { padding: 32px; color: #FFF; }
+    .slide-caption {
+      padding: 32px;
+      color: #FFF;
+      width: 100%;
+      background: linear-gradient(to top, rgba(10,44,67,.9) 0%, rgba(10,44,67,.5) 55%, transparent 100%);
+    }
     .slide-tag {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 11px;
@@ -371,11 +424,13 @@
       width: 42px; height: 42px; border-radius: 50%;
       background: rgba(10,44,67,.5);
       color: #FFF; border: 1px solid rgba(255,255,255,.3);
-      font-size: 22px; line-height: 1; cursor: pointer;
+      cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all .2s ease; z-index: 2;
     }
+    .slide-nav svg { width: 18px; height: 18px; }
     .slide-nav:hover { background: var(--accent); color: var(--primary-deep); border-color: transparent; }
+    .slide-nav:focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; }
     .slide-nav.prev { left: 18px; }
     .slide-nav.next { right: 18px; }
     .slide-dots {
@@ -385,9 +440,10 @@
     .dot {
       width: 9px; height: 9px; border-radius: 50%;
       background: rgba(255,255,255,.5);
-      cursor: pointer; transition: all .2s ease;
+      border: none; padding: 0; cursor: pointer; transition: all .2s ease;
     }
     .dot.active { background: var(--accent); width: 22px; border-radius: 5px; }
+    .dot:focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; }
     @media (max-width: 640px) {
       .slideshow { height: 260px; }
       .slide-caption h3 { font-size: 18px; }
@@ -409,8 +465,8 @@
     .faq-item:nth-child(3) { border-left-color: var(--accent); }
     .faq-item:nth-child(4) { border-left-color: var(--secondary-dark); }
     .faq-item:hover { transform: translateX(4px); }
-    .faq-item h4 { font-size: 15.5px; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
-    .faq-item p { font-size: 13.8px; color: var(--text-soft); line-height: 1.65; }
+    .faq-item h4 { font-size: 15px; color: var(--primary); margin-bottom: 9px; display: flex; align-items: center; gap: 10px; font-weight: 600; line-height: 1.3; }
+    .faq-item p { font-size: 14px; color: var(--text-soft); line-height: 1.6; }
 
     /* ── CTA Banner ─────────────────────────────────── */
     .cta-banner {
@@ -446,12 +502,12 @@
       flex-wrap: wrap;
       gap: 14px;
       font-size: 12.5px;
-      color: var(--text-soft);
-      border-top: 1px solid var(--line);
+      color: rgba(255,255,255,.7);
+      border-top: 1px solid rgba(255,255,255,.16);
     }
     footer .foot-mono { font-family: 'IBM Plex Mono', monospace; letter-spacing: .5px; font-size: 11px; text-transform: uppercase; }
-    footer .foot-mono:first-child { color: var(--primary); font-weight: 600; }
-    footer .foot-mono:last-child { color: var(--secondary-dark); font-weight: 700; }
+    footer .foot-mono:first-child { color: #FFFFFF; font-weight: 600; }
+    footer .foot-mono:last-child { color: var(--accent-light); font-weight: 700; }
 
     @media (max-width: 960px) {
       .hero-wrap { grid-template-columns: 1fr; gap: 40px; }
@@ -475,7 +531,7 @@
         <img src="{{ asset('assets/logo_ntt.png') }}"
              alt="Lambang Provinsi Nusa Tenggara Timur"
              class="seal"
-             onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>'">
+             onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23D9A441%22 stroke-width=%221.6%22><path d=%22M3 21h18%22/><path d=%22M5 21V9l7-5 7 5v12%22/><path d=%22M9 21v-6h6v6%22/><path d=%22M9 9h.01M12 9h.01M15 9h.01%22/></svg>'">
         <div class="brand-text">
           <strong>e-SAKIPKU</strong>
           <span>Pemerintah Provinsi Nusa Tenggara Timur</span>
@@ -491,7 +547,8 @@
       </nav>
 
       <a href="{{ Route::has('login') ? route('login') : '#' }}" class="topbar-login">
-        🔑 Masuk Portal
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5L20 3M20 3h-4M20 3v4"/></svg>
+        Masuk Portal
       </a>
     </div>
   </header>
@@ -500,7 +557,7 @@
 
   <main class="hero-wrap">
     <div>
-      <div class="eyebrow">✨ Akuntabilitas Kinerja Instansi Pemerintah</div>
+      <div class="eyebrow">Akuntabilitas Kinerja Instansi Pemerintah</div>
 
       <h1>Kinerja Perangkat Daerah, tercatat dari akar hingga <em>hasil</em>.</h1>
 
@@ -521,12 +578,16 @@
       </div>
 
       <div class="hero-note" style="margin-top: 16px;">
-        🛡️ Khusus <strong>Admin Biro Organisasi</strong> &amp; <strong>Operator OPD</strong> terdaftar.
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Khusus <strong>Admin Biro Organisasi</strong> &amp; <strong>Operator OPD</strong> terdaftar.
       </div>
     </div>
 
     <aside class="dossier">
-      <div class="dossier-label">📑 Modul Utama Sistem</div>
+      <div class="dossier-label">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 2h4v2H4V5h4l1-2z"/><path d="M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6M14 11v6"/></svg>
+        Modul Utama Sistem
+      </div>
       <ul class="dossier-list">
         <li><span class="dossier-num">1</span> Perjanjian Kinerja &amp; RENSTRA</li>
         <li><span class="dossier-num">2</span> Evaluasi LKE &amp; Klaster</li>
@@ -549,25 +610,44 @@
 
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon-wrapper">🌱</div>
+        <div class="feature-icon-wrapper">
+          <svg class="ic-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v6"/><path d="M12 9c-4 0-6.5 2.5-6.5 6.5"/><path d="M12 9c4 0 6.5 2.5 6.5 6.5"/>
+            <circle cx="12" cy="3" r="1.3" fill="currentColor" stroke="none"/>
+            <circle cx="5.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="18.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
         <h3>Cascading Pohon Kinerja</h3>
         <p>Memetakan sasaran strategis Pemprov NTT hingga indikator kinerja individu secara terstruktur dan transparan.</p>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon-wrapper">⚡</div>
+        <div class="feature-icon-wrapper">
+          <svg class="ic-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>
+          </svg>
+        </div>
         <h3>Revisi & Pengajuan Online</h3>
         <p>Proses pembaruan indikator dan revisi Perjanjian Kinerja (PK) dapat dilakukan online tanpa pertemuan tatap muka.</p>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon-wrapper">📊</div>
+        <div class="feature-icon-wrapper">
+          <svg class="ic-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/>
+          </svg>
+        </div>
         <h3>Evaluasi LKE Real-time</h3>
         <p>Penilaian Lembar Kerja Evaluasi SAKIP otomatis terintegrasi dengan klaster predikat OPD secara presisi.</p>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon-wrapper">🛡️</div>
+        <div class="feature-icon-wrapper">
+          <svg class="ic-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/>
+          </svg>
+        </div>
         <h3>Arsip LKIP Terpusat</h3>
         <p>Seluruh dokumen Laporan Kinerja Instansi Pemerintah tersimpan rapi dan dapat diakses dengan aman kapan saja.</p>
       </div>
@@ -610,32 +690,36 @@
 
   <section id="galeri" style="padding-top: 32px; padding-bottom: 32px;">
     <div class="slideshow" id="slideshow">
-      <div class="slide active" style="background-image: linear-gradient(135deg, var(--primary-deep) 0%, var(--primary) 60%, var(--secondary) 100%);">
+      <div class="slide active" style="background-image: url('{{ asset('assets/staff.jpeg') }}');">
         <div class="slide-caption">
           <span class="slide-tag">Rapat Koordinasi</span>
           <h3>Evaluasi Kinerja Perangkat Daerah se-NTT</h3>
         </div>
       </div>
-      <div class="slide" style="background-image: linear-gradient(135deg, var(--primary) 0%, var(--secondary-dark) 55%, var(--secondary-light) 100%);">
+      <div class="slide" style="background-image: url('{{ asset('assets/staff.jpeg') }}');">
         <div class="slide-caption">
           <span class="slide-tag">Cascading Kinerja</span>
           <h3>Sinkronisasi Indikator OPD dengan Sasaran Provinsi</h3>
         </div>
       </div>
-      <div class="slide" style="background-image: linear-gradient(135deg, var(--primary-deep) 0%, var(--accent-dark) 55%, var(--accent) 100%);">
+      <div class="slide" style="background-image: url('{{ asset('assets/staff.jpeg') }}');">
         <div class="slide-caption">
           <span class="slide-tag">Pelaporan LKIP</span>
           <h3>Dokumentasi Akuntabilitas Kinerja Terpadu</h3>
         </div>
       </div>
 
-      <button class="slide-nav prev" onclick="changeSlide(-1)" aria-label="Sebelumnya">‹</button>
-      <button class="slide-nav next" onclick="changeSlide(1)" aria-label="Berikutnya">›</button>
+      <button class="slide-nav prev" onclick="changeSlide(-1)" aria-label="Sebelumnya">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="slide-nav next" onclick="changeSlide(1)" aria-label="Berikutnya">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
 
       <div class="slide-dots">
-        <span class="dot active" onclick="goToSlide(0)"></span>
-        <span class="dot" onclick="goToSlide(1)"></span>
-        <span class="dot" onclick="goToSlide(2)"></span>
+        <button class="dot active" onclick="goToSlide(0)" aria-label="Slide 1"></button>
+        <button class="dot" onclick="goToSlide(1)" aria-label="Slide 2"></button>
+        <button class="dot" onclick="goToSlide(2)" aria-label="Slide 3"></button>
       </div>
     </div>
   </section>
@@ -645,6 +729,7 @@
     const slides = document.querySelectorAll('#slideshow .slide');
     const dots = document.querySelectorAll('#slideshow .dot');
     let slideTimer;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function showSlide(index) {
       slides.forEach(s => s.classList.remove('active'));
@@ -657,7 +742,7 @@
     function goToSlide(i) { showSlide(i); resetTimer(); }
     function resetTimer() {
       clearInterval(slideTimer);
-      slideTimer = setInterval(() => showSlide(currentSlide + 1), 5000);
+      if (!reduceMotion) slideTimer = setInterval(() => showSlide(currentSlide + 1), 5000);
     }
     resetTimer();
   </script>
@@ -671,22 +756,22 @@
 
     <div class="faq-grid">
       <div class="faq-item">
-        <h4>❓ Siapa saja yang dapat mengakses sistem ini?</h4>
+        <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><circle cx="12" cy="16.5" r=".3" fill="currentColor"/></svg> Siapa saja yang dapat mengakses sistem ini?</h4>
         <p>Akses akun diberikan resmi kepada Admin Biro Organisasi Sekretariat Daerah Provinsi NTT serta Operator SAKIP terdaftar di masing-masing Perangkat Daerah.</p>
       </div>
 
       <div class="faq-item">
-        <h4>❓ Bagaimana jika OPD lupa kredensial akun?</h4>
+        <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><circle cx="12" cy="16.5" r=".3" fill="currentColor"/></svg> Bagaimana jika OPD lupa kredensial akun?</h4>
         <p>Silakan hubungi Administrator Biro Organisasi Setda Prov. NTT melalui layanan bantuan resmi dengan melampirkan Surat Pengantar Instansi.</p>
       </div>
 
       <div class="faq-item">
-        <h4>❓ Kapan batas waktu pengunggahan LKIP Tahunan?</h4>
+        <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><circle cx="12" cy="16.5" r=".3" fill="currentColor"/></svg> Kapan batas waktu pengunggahan LKIP Tahunan?</h4>
         <p>Pengunggahan dokumen LKIP dilakukan sesuai jadwal reguler yang ditetapkan dalam Surat Edaran Gubernur Nusa Tenggara Timur.</p>
       </div>
 
       <div class="faq-item">
-        <h4>❓ Apakah sistem ini mendukung revisi indikator kinerja?</h4>
+        <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><circle cx="12" cy="16.5" r=".3" fill="currentColor"/></svg> Apakah sistem ini mendukung revisi indikator kinerja?</h4>
         <p>Ya, revisi indikator dapat diajukan melalui modul Perjanjian Kinerja untuk kemudian diverifikasi online oleh Biro Organisasi.</p>
       </div>
     </div>
