@@ -725,7 +725,7 @@
         <td style="vertical-align:top;">
           <div style="font-size:12px;color:var(--t2);line-height:1.55;">{{ $kr->uraian }}</div>
         </td>
-        <td colspan="2" style="text-align:center;color:var(--t4);font-size:11px;">—</td>
+        <td colspan="3" style="text-align:center;color:var(--t4);font-size:11px;">—</td>
 
         <td style="vertical-align:top;">
           @if(!$isAdmin)
@@ -741,9 +741,9 @@
         </td>
 
         <td style="vertical-align:top;">
-          @if($isAdmin)
-            <textarea name="komentar_admin[{{ $kr->id }}]" rows="2" class="dk-textarea"
-                      placeholder="Komentar evaluator...">{{ $cat?->komentar_admin ?? '' }}</textarea>
+         @if($isAdmin || session('user.role') === 'evaluator')
+         <textarea name="komentar_admin[{{ $kr->id }}]" rows="2" class="dk-textarea"
+            placeholder="Komentar evaluator...">{{ $cat?->komentar_admin ?? '' }}</textarea>
           @else
             @if($cat?->komentar_admin)
               <div class="catatan-admin">💬 {{ $cat->komentar_admin }}</div>
@@ -753,10 +753,24 @@
           @endif
         </td>
 
-        <td style="vertical-align:top;">
-          <textarea name="daftar_evidence[{{ $kr->id }}]"
-                    rows="2" class="dk-textarea" style="margin-bottom:6px;"
-                    placeholder="- RPJMD 2021-2026&#10;- Renstra Dinas">{{ $cat?->daftar_evidence ?? '' }}</textarea>
+               <td style="vertical-align:top;">
+          <div id="evidence_{{ $kr->id }}_display" style="{{ $cat?->daftar_evidence ? '' : 'display:none;' }}">
+            <div style="font-size:11px;line-height:1.6;color:var(--t2);background:rgba(255,255,255,.03);
+                        border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 10px;
+                        margin-bottom:6px;white-space:pre-line;">
+              {!! \App\Helpers\TextHelper::linkify($cat->daftar_evidence ?? '') !!}
+            </div>
+            <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 8px;margin-bottom:6px;"
+                    onclick="toggleEvidenceEdit({{ $kr->id }})">
+              ✏️ Edit
+            </button>
+          </div>
+
+          <div id="evidence_{{ $kr->id }}_edit" style="{{ $cat?->daftar_evidence ? 'display:none;' : '' }}">
+            <textarea name="daftar_evidence[{{ $kr->id }}]"
+                      rows="2" class="dk-textarea" style="margin-bottom:6px;"
+                      placeholder="- RPJMD 2021-2026&#10;- Renstra Dinas">{{ $cat?->daftar_evidence ?? '' }}</textarea>
+          </div>
 
           @if(!$isAdmin)
           <div class="upload-row">
@@ -794,7 +808,6 @@
         </td>
       </tr>
       @endforeach
-
       <tr class="row-total">
         <td colspan="3" style="text-align:right;padding-right:16px;">
           Total — {{ $k->nama }}
@@ -937,6 +950,13 @@ function ajaxHapus(docId, btn) {
     console.error(e); alert('Terjadi kesalahan.');
     btn.disabled = false; btn.textContent = '🗑';
   });
+}
+
+function toggleEvidenceEdit(krId) {
+  document.getElementById('evidence_' + krId + '_display').style.display = 'none';
+  var editBox = document.getElementById('evidence_' + krId + '_edit');
+  editBox.style.display = 'block';
+  editBox.querySelector('textarea').focus();
 }
 
 function getPersentaseDariJawaban(jawaban) {

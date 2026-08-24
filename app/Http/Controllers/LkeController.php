@@ -312,7 +312,7 @@ public function simpan(Request $request)
         try {
             $upd = ['updated_at' => now(), 'created_at' => now()];
 
-            if ($user['role'] === 'admin') {
+           if ($user['role'] === 'admin' || $user['role'] === 'evaluator') {
                 $upd['komentar_admin'] = $komAdmin[$krId] ?? '';
             }
 
