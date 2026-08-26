@@ -164,9 +164,10 @@
   padding: 8px 10px;
   color: var(--t2);
   font-size: 11.5px;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   outline: none;
-  transition: border-color .2s;
+  transition: border-color .2s, height .1s ease;
   box-sizing: border-box;
   line-height: 1.5;
 }
@@ -956,8 +957,30 @@ function toggleEvidenceEdit(krId) {
   document.getElementById('evidence_' + krId + '_display').style.display = 'none';
   var editBox = document.getElementById('evidence_' + krId + '_edit');
   editBox.style.display = 'block';
-  editBox.querySelector('textarea').focus();
+  var ta = editBox.querySelector('textarea');
+  ta.focus();
+  autoGrow(ta);
 }
+/* ── Auto-resize textarea ─────────────────────── */
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Set tinggi awal sesuai isi yang sudah ada (termasuk data lama)
+  document.querySelectorAll('.dk-textarea').forEach(function (el) {
+    autoGrow(el);
+  });
+});
+
+// Auto-resize setiap kali user mengetik, termasuk textarea yang baru
+// dimunculkan lewat tombol Edit (event delegation, bukan per-elemen)
+document.addEventListener('input', function (e) {
+  if (e.target.classList.contains('dk-textarea')) {
+    autoGrow(e.target);
+  }
+});
 
 function getPersentaseDariJawaban(jawaban) {
   const mapping = { 'AA': 100, 'A': 90, 'BB': 80, 'B': 70, 'CC': 60, 'C': 50, 'D': 30, 'E': 0 };

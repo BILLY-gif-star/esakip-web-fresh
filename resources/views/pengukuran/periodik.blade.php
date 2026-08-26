@@ -19,257 +19,372 @@
 
 @section('content')
 <style>
-/* ─── RESET ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   DARK GLASS THEME — konsisten dengan SIAP-REAKSI RB
+═══════════════════════════════════════════════════════ */
 *{box-sizing:border-box;}
 
-/* ─── TOOLBAR ────────────────────────────────────── */
-.xls-toolbar{background:#fff;border:1px solid #d0d0d0;border-radius:6px;padding:8px 14px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.xls-toolbar-label{font-size:12px;font-weight:600;color:#555;white-space:nowrap;}
-.xls-toolbar select{height:30px;padding:0 8px;border:1px solid #ccc;border-radius:3px;font-size:12px;background:#fff;color:#1e293b;outline:none;}
-.xls-toolbar select:focus{border-color:#217346;}
-.xls-toolbar-sep{width:1px;height:22px;background:#e2e8f0;margin:0 4px;}
-.btn-tampilkan{height:30px;padding:0 16px;background:#217346;color:#fff;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;}
-.btn-tampilkan:hover{background:#1a5c38;}
-.btn-print-glass{height:30px;padding:0 14px;background:#fff;color:#555;border:1px solid #ccc;border-radius:3px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-.btn-print-glass:hover{background:#f5f5f5;}
-.btn-add-main{height:30px;padding:0 16px;background:#217346;color:#fff;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-.btn-add-main:hover{background:#1a5c38;}
+/* ─── TOOLBAR (dulu Excel-white, sekarang glass bar) ─── */
+.xls-toolbar{
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:10px;
+    padding:14px 18px;margin-bottom:16px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.xls-toolbar-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);white-space:nowrap;}
+.xls-toolbar select{
+    height:34px;padding:0 10px;border-radius:6px;font-size:12px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+    color:#fff;outline:none;transition:border-color .2s;cursor:pointer;
+}
+.xls-toolbar select:hover{border-color:rgba(69,198,122,.4);}
+.xls-toolbar select:focus{border-color:#45c67a;}
+.xls-toolbar select option{background:#1a1a2e;color:#fff;}
+.xls-toolbar-sep{width:1px;height:22px;background:rgba(255,255,255,.1);margin:0 4px;}
 
-/* ─── SHEET ──────────────────────────────────────── */
-.sheet-wrap{background:#fff;border:1px solid #bbb;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;}
-.sheet-header{background:#217346;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;}
-.sheet-title-bar{color:#fff;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;}
-.sheet-tabs{display:flex;gap:2px;}
-.sheet-tab{padding:3px 14px;background:rgba(255,255,255,.15);color:#fff;font-size:11px;border-radius:2px;cursor:pointer;}
-.sheet-tab.active{background:#fff;color:#217346;font-weight:600;}
+.btn-tampilkan{
+    height:34px;padding:0 18px;border:none;border-radius:6px;
+    background:rgba(69,198,122,.25);color:#fff;font-size:12px;font-weight:600;
+    cursor:pointer;transition:all .2s;
+}
+.btn-tampilkan:hover{background:rgba(69,198,122,.4);}
 
-/* ─── TABLE ──────────────────────────────────────── */
-.xls-scroll{overflow-x:auto;overflow-y:auto;max-height:560px;}
+.btn-print-glass{
+    height:34px;padding:0 16px;border-radius:6px;
+    background:rgba(255,255,255,.05);color:rgba(255,255,255,.75);
+    border:1px solid rgba(255,255,255,.1);font-size:12px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:all .2s;
+}
+.btn-print-glass:hover{background:rgba(255,255,255,.1);color:#fff;}
 
-/* KEY FIX: table-layout:auto agar kolom bisa ikut konten */
+.btn-add-main{
+    height:34px;padding:0 18px;border:none;border-radius:6px;
+    background:rgba(69,198,122,.25);color:#fff;font-size:12px;font-weight:600;
+    cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;
+}
+.btn-add-main:hover{background:rgba(69,198,122,.4);transform:translateY(-1px);}
+
+/* ─── SHEET WRAPPER (dulu putih, sekarang glass card) ── */
+.sheet-wrap{
+    background:rgba(255,255,255,.02);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:10px;overflow:hidden;margin-bottom:14px;
+}
+.sheet-header{
+    background:rgba(69,198,122,.1);
+    border-bottom:1px solid rgba(69,198,122,.2);
+    padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+}
+.sheet-title-bar{color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.sheet-tabs{display:flex;gap:4px;}
+.sheet-tab{
+    padding:5px 14px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);
+    font-size:11px;border-radius:6px;cursor:pointer;transition:all .2s;
+}
+.sheet-tab.active{background:rgba(69,198,122,.25);color:#fff;font-weight:600;}
+
+/* ─── TABLE ──────────────────────────────────────────── */
+.xls-scroll{overflow-x:auto;overflow-y:auto;max-height:600px;}
+
 .xls-table{
-    border-collapse:collapse;
-    font-size:12px;
-    width:100%;
-    min-width:2400px;
-    table-layout:auto; /* ← auto = kolom melebar sesuai konten */
+    border-collapse:collapse;font-size:12px;width:100%;
+    min-width:2400px;table-layout:auto;
 }
-.xls-table th,.xls-table td{border:1px solid #d0d0d0;padding:0;vertical-align:middle;}
+.xls-table th,.xls-table td{
+    border:1px solid rgba(255,255,255,.06);padding:0;vertical-align:middle;
+}
 
-/* row number sticky */
 .row-num{
-    width:36px;min-width:36px;
-    background:#f2f2f2;text-align:center;font-size:10px;color:#777;
-    padding:3px 0;border-right:1px solid #bbb;font-family:monospace;font-weight:500;
-    position:sticky;left:0;z-index:5;
+    width:36px;min-width:36px;text-align:center;font-size:10px;
+    color:rgba(255,255,255,.35);padding:3px 0;
+    background:rgba(255,255,255,.03);
+    border-right:1px solid rgba(255,255,255,.08);
+    font-family:monospace;font-weight:500;position:sticky;left:0;z-index:5;
 }
 
-/* header */
-.xls-th{background:#1f3864;color:#fff;text-align:center;font-size:11px;font-weight:600;padding:6px 4px;white-space:nowrap;position:sticky;top:0;z-index:10;}
-.xls-th.sub{background:#2e5090;font-size:10px;font-weight:500;padding:4px 3px;position:sticky;top:33px;z-index:10;}
-/* section colours */
-.xls-th.sec-target{background:#1f4e79;}  .xls-th.sub.sec-target{background:#2472a4;}
-.xls-th.sec-program{background:#1f4e79;} .xls-th.sub.sec-program{background:#2472a4;}
-.xls-th.sec-anggaran{background:#4a235a;}.xls-th.sub.sec-anggaran{background:#6c3483;}
-.xls-th.sec-cap-k{background:#145a32;}   .xls-th.sub.sec-cap-k{background:#1e8449;}
-.xls-th.sec-cap-p{background:#1a5276;}   .xls-th.sub.sec-cap-p{background:#1f618d;}
-.xls-th.sec-cap-a{background:#7b241c;}   .xls-th.sub.sec-cap-a{background:#a93226;}
-.xls-th.row-num{background:#1f3864;color:#888;font-size:9px;border:1px solid #3a4a6b;position:sticky;top:0;left:0;z-index:20;}
-.xls-th.sub.row-num{background:#2e5090;position:sticky;top:33px;left:0;z-index:20;}
+.xls-th{
+    background:rgba(69,198,122,.12);color:rgba(255,255,255,.85);
+    text-align:center;font-size:10.5px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.4px;
+    padding:8px 6px;white-space:nowrap;
+    position:sticky;top:0;z-index:10;
+    border-bottom:2px solid rgba(69,198,122,.25);
+}
+.xls-th.sub{
+    background:rgba(69,198,122,.07);font-size:10px;font-weight:500;
+    text-transform:none;letter-spacing:0;padding:6px 4px;
+    position:sticky;top:34px;z-index:10;
+}
 
-/* body cells */
+/* Kategori kolom — hanya tint tipis, bukan blok warna solid */
+.xls-th.sec-target,.xls-th.sec-program{background:rgba(59,130,246,.14);}
+.xls-th.sub.sec-target,.xls-th.sub.sec-program{background:rgba(59,130,246,.08);}
+.xls-th.sec-anggaran{background:rgba(217,164,65,.16);}
+.xls-th.sub.sec-anggaran{background:rgba(217,164,65,.09);}
+.xls-th.sec-cap-k,.xls-th.sec-cap-p{background:rgba(69,198,122,.16);}
+.xls-th.sub.sec-cap-k,.xls-th.sub.sec-cap-p{background:rgba(69,198,122,.09);}
+.xls-th.sec-cap-a{background:rgba(217,164,65,.16);}
+.xls-th.sub.sec-cap-a{background:rgba(217,164,65,.09);}
+
+.xls-th.row-num{
+    background:rgba(69,198,122,.12);color:rgba(255,255,255,.4);font-size:9px;
+    border:1px solid rgba(69,198,122,.15);position:sticky;top:0;left:0;z-index:20;
+}
+.xls-th.sub.row-num{background:rgba(69,198,122,.07);position:sticky;top:34px;left:0;z-index:20;}
+
 .xls-td{
-    padding:5px 7px;background:#fff;font-size:12px;color:#1e293b;
-    text-align:center;
-    /* KEY FIX: biarkan konten menentukan lebar, teks bisa wrap */
-    white-space:normal;
-    word-break:break-word;
+    padding:7px 8px;background:transparent;font-size:12px;color:rgba(255,255,255,.85);
+    text-align:center;white-space:normal;word-break:break-word;
 }
 .xls-td.center{text-align:center;}
 .xls-td.left{text-align:left;}
-.xls-td.nowrap{white-space:nowrap;} /* untuk kolom aksi */
+.xls-td.nowrap{white-space:nowrap;}
 
-/* ── sasaran cell ── */
+tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
+
+/* ── sasaran cell (dulu biru solid mode-terang) ── */
 .sasaran-cell{
-    background:linear-gradient(180deg,#e8f4fd 0%,#dbeafe 100%);
-    border-left:3px solid #2563eb !important;
-    border-top:2px solid #93c5fd !important;
-    vertical-align:top !important;
-    padding:10px 10px 8px !important;
-    min-width:175px;
+    background:rgba(59,130,246,.08);
+    border-left:3px solid #3b82f6 !important;
+    border-top:2px solid rgba(59,130,246,.25) !important;
+    vertical-align:top !important;padding:10px 10px 8px !important;min-width:175px;
 }
 .sasaran-cell-content{display:flex;flex-direction:column;gap:6px;}
-.sasaran-cell-num{font-size:10px;font-weight:800;color:#fff;background:#2563eb;border-radius:20px;padding:1px 8px;display:inline-block;align-self:flex-start;}
-.sasaran-cell-text{font-size:12px;font-weight:700;color:#1d4ed8;line-height:1.45;white-space:normal;word-break:break-word;}
+.sasaran-cell-num{
+    font-size:10px;font-weight:800;color:#fff;background:#3b82f6;
+    border-radius:20px;padding:1px 8px;display:inline-block;align-self:flex-start;
+}
+.sasaran-cell-text{font-size:12px;font-weight:700;color:#93c5fd;line-height:1.45;white-space:normal;word-break:break-word;}
 .sasaran-cell-actions{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px;}
 
-/* batas group */
-.row-group-start td{border-top:2px solid #93c5fd !important;}
+.row-group-start td{border-top:2px solid rgba(59,130,246,.3) !important;}
 
 /* ── input di dalam sel ── */
 .xls-input{
-    width:100%;border:none;
-    /* KEY FIX: min-width kecil, biarkan kolom melebar karena table-layout:auto */
-    min-width:55px;
-    padding:4px 5px;text-align:center;
-    font-size:12px;font-family:inherit;background:transparent;color:#1e293b;outline:none;
-    /* KEY FIX: wrap agar teks panjang tidak overflow */
-    white-space:normal;
-    word-break:break-word;
-    resize:none;
-    line-height:1.4;
+    width:100%;border:none;min-width:55px;padding:6px 5px;text-align:center;
+    font-size:12px;font-family:inherit;background:transparent;color:#fff;outline:none;
+    white-space:normal;word-break:break-word;resize:none;line-height:1.4;
+    transition:background .15s;
 }
-.xls-input:focus{background:#fff7cd;box-shadow:inset 0 0 0 2px #1d6f42;}
-.xls-input.readonly{background:#f5f5f5;color:#888;cursor:default;}
+.xls-input:focus{background:rgba(69,198,122,.12);box-shadow:inset 0 0 0 2px rgba(69,198,122,.5);}
+.xls-input.readonly{background:rgba(255,255,255,.02);color:rgba(255,255,255,.4);cursor:default;}
 .xls-input.anggaran-fmt{font-size:11px;}
+.xls-input::placeholder{color:rgba(255,255,255,.25);}
 
 /* ── action buttons ── */
 .aksi-btn{
-    width:26px;height:26px;border:none;border-radius:3px;
-    cursor:pointer;font-size:13px;
-    display:inline-flex;align-items:center;justify-content:center;
-    transition:all .15s;flex-shrink:0;
+    width:26px;height:26px;border:none;border-radius:6px;cursor:pointer;font-size:13px;
+    display:inline-flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;
 }
-.aksi-btn.edit{background:#dbeafe;color:#1d4ed8;}
-.aksi-btn.edit:hover{background:#bfdbfe;transform:scale(1.05);}
-.aksi-btn.del{background:#fee2e2;color:#dc2626;}
-.aksi-btn.del:hover{background:#fecaca;transform:scale(1.05);}
-.aksi-btn.add{background:#d1fae5;color:#065f46;}
-.aksi-btn.add:hover{background:#a7f3d0;transform:scale(1.05);}
+.aksi-btn.edit{background:rgba(59,130,246,.2);color:#93c5fd;}
+.aksi-btn.edit:hover{background:rgba(59,130,246,.35);transform:scale(1.05);}
+.aksi-btn.del{background:rgba(226,75,74,.2);color:#f3a5a4;}
+.aksi-btn.del:hover{background:rgba(226,75,74,.35);transform:scale(1.05);}
+.aksi-btn.add{background:rgba(69,198,122,.2);color:#7fe3a8;}
+.aksi-btn.add:hover{background:rgba(69,198,122,.35);transform:scale(1.05);}
 
-/* small variants untuk sasaran cell */
-.aksi-sm{width:22px;height:22px;border:none;border-radius:3px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
-.aksi-sm.edit{background:#dbeafe;color:#1d4ed8;}
-.aksi-sm.edit:hover{background:#bfdbfe;}
-.aksi-sm.del{background:#fee2e2;color:#dc2626;}
-.aksi-sm.del:hover{background:#fecaca;}
-.aksi-sm.add{background:#d1fae5;color:#065f46;}
-.aksi-sm.add:hover{background:#a7f3d0;}
+.aksi-sm{width:22px;height:22px;border:none;border-radius:5px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
+.aksi-sm.edit{background:rgba(59,130,246,.2);color:#93c5fd;}
+.aksi-sm.edit:hover{background:rgba(59,130,246,.35);}
+.aksi-sm.del{background:rgba(226,75,74,.2);color:#f3a5a4;}
+.aksi-sm.del:hover{background:rgba(226,75,74,.35);}
+.aksi-sm.add{background:rgba(69,198,122,.2);color:#7fe3a8;}
+.aksi-sm.add:hover{background:rgba(69,198,122,.35);}
 
 /* ── statusbar ── */
-.xls-statusbar{background:#217346;color:#fff;padding:4px 14px;font-size:11px;display:flex;gap:20px;align-items:center;}
+.xls-statusbar{
+    background:rgba(69,198,122,.1);border-top:1px solid rgba(69,198,122,.2);
+    color:rgba(255,255,255,.75);padding:8px 16px;font-size:11px;
+    display:flex;gap:20px;align-items:center;
+}
 .xls-statusbar span{opacity:.85;display:flex;align-items:center;gap:5px;}
 
 /* ─── DROPDOWN CONTEXT MENU ───────────────────────── */
 .ctx-menu{
-    position:fixed;z-index:9999;
-    background:#fff;border:1px solid #d0d0d0;border-radius:6px;
-    box-shadow:0 6px 24px rgba(0,0,0,.15);
-    min-width:200px;overflow:hidden;
+    position:fixed;z-index:9999;background:#16161f;
+    border:1px solid rgba(255,255,255,.1);border-radius:8px;
+    box-shadow:0 12px 32px rgba(0,0,0,.5);min-width:200px;overflow:hidden;
     animation:ctxFade .12s ease;
 }
 @keyframes ctxFade{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 .ctx-item{
-    display:flex;align-items:center;gap:10px;
-    padding:9px 14px;font-size:12px;font-weight:500;color:#1e293b;
-    cursor:pointer;transition:background .1s;border:none;background:none;width:100%;text-align:left;
+    display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:12px;font-weight:500;
+    color:rgba(255,255,255,.85);cursor:pointer;transition:background .1s;
+    border:none;background:none;width:100%;text-align:left;
 }
-.ctx-item:hover{background:#f1f5f9;}
-.ctx-item.danger{color:#dc2626;}
-.ctx-item.danger:hover{background:#fef2f2;}
-.ctx-item.success{color:#065f46;}
-.ctx-item.success:hover{background:#f0fdf4;}
-.ctx-divider{height:1px;background:#e2e8f0;margin:2px 0;}
-.ctx-label{
-    padding:5px 14px 3px;font-size:10px;font-weight:700;
-    color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;
-}
+.ctx-item:hover{background:rgba(255,255,255,.06);}
+.ctx-item.danger{color:#f3a5a4;}
+.ctx-item.danger:hover{background:rgba(226,75,74,.1);}
+.ctx-item.success{color:#7fe3a8;}
+.ctx-item.success:hover{background:rgba(69,198,122,.1);}
+.ctx-divider{height:1px;background:rgba(255,255,255,.08);margin:2px 0;}
+.ctx-label{padding:5px 14px 3px;font-size:10px;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.05em;}
 
 /* ─── FORM PANEL ──────────────────────────────────── */
-.form-panel{display:none;background:#fff;border:1px solid #d0d0d0;border-radius:6px;margin-top:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.1);animation:slideDown .2s ease;}
+.form-panel{
+    display:none;background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08);border-radius:10px;
+    margin-top:12px;overflow:hidden;animation:slideDown .2s ease;
+}
 .form-panel.open{display:block;}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.form-panel-header{background:#217346;color:#fff;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;}
+.form-panel-header{
+    background:rgba(69,198,122,.15);color:#fff;padding:12px 18px;
+    display:flex;align-items:center;justify-content:space-between;
+}
 .form-panel-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;}
-.form-panel-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:26px;height:26px;border-radius:3px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
-.form-panel-close:hover{background:rgba(255,255,255,.35);}
-.form-ribbon{background:#f0f0f0;border-bottom:1px solid #d0d0d0;padding:7px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.ribbon-step{display:flex;align-items:center;gap:6px;font-size:11px;color:#888;}
-.ribbon-step.done{color:#217346;}
-.step-num{width:20px;height:20px;border-radius:50%;background:#d0d0d0;color:#666;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
-.ribbon-step.done .step-num{background:#217346;color:#fff;}
-.ribbon-arrow{font-size:11px;color:#bbb;}
-.form-body{padding:16px;}
-.info-tip{background:#fffbeb;border:1px solid #fcd34d;border-radius:3px;padding:8px 12px;font-size:11px;color:#92400e;display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;line-height:1.5;}
-.form-section{border:1px solid #d0d0d0;border-radius:3px;margin-bottom:14px;overflow:hidden;}
-.form-section-head{background:#f7f7f7;border-bottom:1px solid #d0d0d0;padding:6px 12px;font-size:11px;font-weight:700;color:#444;display:flex;align-items:center;gap:6px;}
-.form-section-body{padding:12px;}
+.form-panel-close{
+    background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;
+    border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+}
+.form-panel-close:hover{background:rgba(255,255,255,.2);}
+.form-ribbon{
+    background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.06);
+    padding:9px 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+}
+.ribbon-step{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.35);}
+.ribbon-step.done{color:#7fe3a8;}
+.step-num{
+    width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.08);
+    color:rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;flex-shrink:0;
+}
+.ribbon-step.done .step-num{background:rgba(69,198,122,.35);color:#fff;}
+.ribbon-arrow{font-size:11px;color:rgba(255,255,255,.2);}
+.form-body{padding:18px;}
+.info-tip{
+    background:rgba(217,164,65,.1);border:1px solid rgba(217,164,65,.3);
+    border-radius:6px;padding:9px 13px;font-size:11px;color:#e8c476;
+    display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;line-height:1.5;
+}
+.form-section{border:1px solid rgba(255,255,255,.08);border-radius:8px;margin-bottom:14px;overflow:hidden;}
+.form-section-head{
+    background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.08);
+    padding:7px 13px;font-size:11px;font-weight:700;color:rgba(255,255,255,.7);
+    display:flex;align-items:center;gap:6px;
+}
+.form-section-body{padding:13px;}
 .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .form-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.form-lbl{font-size:11px;font-weight:600;color:#555;margin-bottom:4px;display:block;}
-.form-inp{width:100%;height:30px;border:1px solid #ccc;border-radius:2px;padding:0 8px;font-size:12px;background:#fff;color:#1e293b;outline:none;font-family:inherit;transition:border-color .2s;}
-.form-inp:focus{border-color:#217346;box-shadow:0 0 0 2px rgba(33,115,70,.1);}
-.form-ta{width:100%;border:1px solid #ccc;border-radius:2px;padding:6px 8px;font-size:12px;background:#fff;color:#1e293b;outline:none;resize:vertical;min-height:54px;font-family:inherit;transition:border-color .2s;}
-.form-ta:focus{border-color:#217346;box-shadow:0 0 0 2px rgba(33,115,70,.1);}
-.form-file{width:100%;border:1px solid #ccc;border-radius:2px;padding:4px 8px;font-size:11px;background:#fff;color:#555;outline:none;}
+.form-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:4px;display:block;}
+.form-inp{
+    width:100%;height:32px;border-radius:6px;padding:0 10px;font-size:12px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    color:#fff;outline:none;font-family:inherit;transition:border-color .2s;
+}
+.form-inp:focus{border-color:#45c67a;background:rgba(255,255,255,.09);}
+.form-inp::placeholder{color:rgba(255,255,255,.3);}
+.form-ta{
+    width:100%;border-radius:6px;padding:7px 10px;font-size:12px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    color:#fff;outline:none;resize:vertical;min-height:54px;font-family:inherit;transition:border-color .2s;
+}
+.form-ta:focus{border-color:#45c67a;background:rgba(255,255,255,.09);}
+.form-ta::placeholder{color:rgba(255,255,255,.3);}
+.form-file{
+    width:100%;border-radius:6px;padding:6px 10px;font-size:11px;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);outline:none;
+}
 
 .tw-section{margin-bottom:10px;}
-.tw-section-label{font-size:11px;font-weight:600;color:#555;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.tw-section-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:5px;display:flex;align-items:center;gap:6px;}
 .tw-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
-.tw-card{background:#fff;border:1px solid #d0d0d0;border-radius:3px;overflow:hidden;}
-.tw-card-head{background:#f0f0f0;text-align:center;font-size:10px;font-weight:700;color:#555;padding:3px 0;border-bottom:1px solid #d0d0d0;}
+.tw-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:6px;overflow:hidden;}
+.tw-card-head{background:rgba(255,255,255,.04);text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.08);}
 .tw-card-body{padding:4px;}
-.tw-card-inp{width:100%;border:none;text-align:center;font-size:12px;padding:4px;outline:none;background:transparent;color:#1e293b;font-family:inherit;}
-.tw-card-inp:focus{background:#fff7cd;}
+.tw-card-inp{width:100%;border:none;text-align:center;font-size:12px;padding:4px;outline:none;background:transparent;color:#fff;font-family:inherit;}
+.tw-card-inp:focus{background:rgba(69,198,122,.12);}
+.tw-card-inp::placeholder{color:rgba(255,255,255,.25);}
 
-.indikator-block{background:#f9fafb;border:1px solid #d0d0d0;border-radius:3px;margin-bottom:12px;overflow:hidden;animation:slideDown .2s ease;}
-.indikator-block-head{background:#e0e7ff;border-bottom:1px solid #c7d2fe;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;}
-.indikator-block-title{font-size:11px;font-weight:700;color:#3730a3;}
-.btn-hapus-block{background:#fee2e2;border:none;width:22px;height:22px;border-radius:2px;cursor:pointer;color:#dc2626;font-size:13px;line-height:1;}
-.btn-hapus-block:hover{background:#fecaca;}
-.indikator-block-body{padding:12px;}
-.tw-block{background:#fff;border:1px solid #e2e8f0;border-radius:3px;padding:10px;margin-top:6px;}
-.btn-tambah-ind{height:30px;padding:0 14px;background:#fff;border:1.5px dashed #6366f1;border-radius:3px;font-size:11px;font-weight:600;color:#6366f1;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .2s;}
-.btn-tambah-ind:hover{background:#eef2ff;}
-.form-footer{padding:10px 16px;border-top:1px solid #d0d0d0;background:#f7f7f7;display:flex;gap:8px;justify-content:flex-end;align-items:center;}
-.btn-batal{height:32px;padding:0 18px;background:#fff;border:1px solid #ccc;border-radius:2px;font-size:12px;font-weight:500;cursor:pointer;color:#555;}
-.btn-batal:hover{background:#f0f0f0;}
-.btn-simpan{height:32px;padding:0 22px;background:#217346;color:#fff;border:none;border-radius:2px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-.btn-simpan:hover{background:#1a5c38;}
+.indikator-block{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:8px;margin-bottom:12px;overflow:hidden;animation:slideDown .2s ease;}
+.indikator-block-head{background:rgba(99,102,241,.15);border-bottom:1px solid rgba(99,102,241,.25);padding:7px 13px;display:flex;align-items:center;justify-content:space-between;}
+.indikator-block-title{font-size:11px;font-weight:700;color:#a5b4fc;}
+.btn-hapus-block{background:rgba(226,75,74,.2);border:none;width:22px;height:22px;border-radius:5px;cursor:pointer;color:#f3a5a4;font-size:13px;line-height:1;}
+.btn-hapus-block:hover{background:rgba(226,75,74,.35);}
+.indikator-block-body{padding:13px;}
+.tw-block{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px;margin-top:6px;}
+.btn-tambah-ind{
+    height:32px;padding:0 15px;background:rgba(99,102,241,.12);border:1.5px dashed rgba(99,102,241,.5);
+    border-radius:6px;font-size:11px;font-weight:600;color:#a5b4fc;cursor:pointer;
+    display:inline-flex;align-items:center;gap:5px;transition:background .2s;
+}
+.btn-tambah-ind:hover{background:rgba(99,102,241,.2);}
+.form-footer{padding:11px 18px;border-top:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);display:flex;gap:8px;justify-content:flex-end;align-items:center;}
+.btn-batal{height:34px;padding:0 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.7);}
+.btn-batal:hover{background:rgba(255,255,255,.1);color:#fff;}
+.btn-simpan{height:34px;padding:0 24px;background:rgba(69,198,122,.25);color:#fff;border:1px solid #45c67a;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;}
+.btn-simpan:hover{background:rgba(69,198,122,.4);}
 
 /* ─── MODAL ──────────────────────────────────────── */
-.modal-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:1000;justify-content:center;align-items:center;}
-.modal-box{background:#fff;border-radius:6px;width:520px;max-width:92%;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.25);animation:modalIn .2s ease;}
+.modal-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:1000;justify-content:center;align-items:center;}
+.modal-box{background:#16161f;border:1px solid rgba(255,255,255,.1);border-radius:10px;width:520px;max-width:92%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.6);animation:modalIn .2s ease;}
 .modal-box.lg{width:700px;}
 @keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.modal-head{background:#1f3864;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:6px 6px 0 0;}
-.modal-head.green{background:#065f46;}
-.modal-head.amber{background:#92400e;}
+.modal-head{background:rgba(69,198,122,.15);border-bottom:1px solid rgba(69,198,122,.25);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-radius:10px 10px 0 0;}
+.modal-head.green{background:rgba(69,198,122,.2);border-bottom-color:rgba(69,198,122,.35);}
+.modal-head.amber{background:rgba(217,164,65,.18);border-bottom-color:rgba(217,164,65,.3);}
 .modal-head-title{font-size:13px;font-weight:600;}
-.modal-close-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:26px;height:26px;border-radius:3px;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;}
-.modal-close-btn:hover{background:rgba(255,255,255,.35);}
+.modal-close-btn{background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;}
+.modal-close-btn:hover{background:rgba(255,255,255,.2);}
 .modal-body{padding:18px;}
-.modal-foot{padding:10px 16px;border-top:1px solid #e2e8f0;background:#f7f7f7;display:flex;gap:8px;justify-content:flex-end;border-radius:0 0 6px 6px;}
+.modal-foot{padding:11px 18px;border-top:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);display:flex;gap:8px;justify-content:flex-end;border-radius:0 0 10px 10px;}
 
 /* save status */
-#saveStatusBar{position:fixed;bottom:20px;right:20px;z-index:9998;background:#1e293b;color:#fff;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.3);display:none;align-items:center;gap:8px;}
+#saveStatusBar{position:fixed;bottom:20px;right:20px;z-index:9998;background:#16161f;border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.4);display:none;align-items:center;gap:8px;}
 
 /* alert & empty */
-.alert{border-radius:6px;padding:11px 16px;font-size:13px;margin-bottom:14px;}
-.alert-success{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
-.alert-danger{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+.alert{border-radius:8px;padding:11px 16px;font-size:13px;margin-bottom:14px;border:1px solid;}
+.alert-success{background:rgba(69,198,122,.1);border-color:rgba(69,198,122,.3);color:#7fe3a8;}
+.alert-danger{background:rgba(226,75,74,.1);border-color:rgba(226,75,74,.3);color:#f3a5a4;}
 .empty-state{text-align:center;padding:70px 20px;}
-.empty-icon{font-size:52px;margin-bottom:14px;}
-.empty-title{font-size:17px;font-weight:700;color:#1e293b;margin-bottom:6px;}
-.empty-sub{font-size:13px;color:#64748b;line-height:1.6;}
+.empty-icon{font-size:52px;margin-bottom:14px;opacity:.5;}
+.empty-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:6px;}
+.empty-sub{font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;}
 
 /* highlight badge sasaran */
 .sasaran-info-badge{
-    background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;
-    padding:8px 12px;margin-bottom:14px;
-    display:flex;gap:8px;align-items:flex-start;
+    background:rgba(69,198,122,.1);border:1px solid rgba(69,198,122,.3);border-radius:6px;
+    padding:8px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;
 }
 
-/* Print */
+/* Print — tetap terang & rapi, dark theme tidak dipaksakan ke hasil cetak */
 @media print{
+    @page{ size: landscape; margin: 8mm; }
+
     .xls-toolbar,.form-panel,#saveStatusBar,.no-print,.ctx-menu,
     .aksi-btn,.aksi-sm{display:none!important;}
+
+    /* Wajib: hilangkan batasan lebar & scroll, biar tabel menyusut
+       otomatis mengikuti lebar kertas, bukan kepotong */
+    .xls-scroll{
+        overflow:visible!important;
+        max-height:none!important;
+    }
+    .xls-table{
+        min-width:0!important;
+        width:100%!important;
+        table-layout:fixed!important;
+    }
+
+    /* Sticky header gak relevan di kertas, malah bisa bikin aneh */
+    .xls-th,.row-num{ position:static!important; }
+
+    /* Perkecil font & padding biar 25+ kolom tetap muat & kebaca */
+    .xls-table th,.xls-table td{ padding:2px 3px!important; font-size:7px!important; }
+    .xls-th{ font-size:6.5px!important; white-space:normal!important; }
+    .xls-td{ white-space:normal!important; word-break:break-word!important; }
+
     .xls-table th{background:#e2e8f0!important;color:#000!important;}
     .xls-table td{color:#000!important;background:#fff!important;}
     .sasaran-cell{background:#dbeafe!important;}
     .sasaran-cell-text{color:#1d4ed8!important;}
-    .xls-input{color:#000!important;}
+    .xls-input{color:#000!important;font-size:7px!important;}
     .sheet-header,.xls-statusbar{background:#e2e8f0!important;color:#000!important;}
+}
+
+@media (max-width: 768px) {
+  .klaster-grid { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -280,13 +395,13 @@
 
     /* TW sections — dipakai di form & modal */
     $twSecs = [
-        ['label'=>'Target Kinerja',           'dot'=>'#1f4e79','prefix'=>'target_kinerja_tw',  'fmt'=>false],
-        ['label'=>'Target Program/Kegiatan',  'dot'=>'#1f4e79','prefix'=>'target_program_tw',  'fmt'=>false],
-        ['label'=>'Anggaran (Rp)',            'dot'=>'#4a235a','prefix'=>'anggaran_tw',         'fmt'=>true ],
-        ['label'=>'Capaian Kinerja',          'dot'=>'#145a32','prefix'=>'capaian_kinerja_tw',  'fmt'=>false,'note'=>'(kosongkan jika belum ada)'],
-        ['label'=>'Capaian Program/Kegiatan', 'dot'=>'#1a5276','prefix'=>'capaian_program_tw',  'fmt'=>false],
-        ['label'=>'Capaian Anggaran (Rp)',    'dot'=>'#7b241c','prefix'=>'capaian_anggaran_tw', 'fmt'=>true ],
-    ];
+    ['label'=>'Target Kinerja',           'dot'=>'#1f4e79','prefix'=>'target_kinerja_tw',  'fmt'=>false],
+    ['label'=>'Target Program/Kegiatan',  'dot'=>'#1f4e79','prefix'=>'target_program_tw',  'fmt'=>false],
+    ['label'=>'Anggaran (Rp)',            'dot'=>'#92600a','prefix'=>'anggaran_tw',         'fmt'=>true ],
+    ['label'=>'Capaian Kinerja',          'dot'=>'#145a32','prefix'=>'capaian_kinerja_tw',  'fmt'=>false,'note'=>'(kosongkan jika belum ada)'],
+    ['label'=>'Capaian Program/Kegiatan', 'dot'=>'#145a32','prefix'=>'capaian_program_tw',  'fmt'=>false],
+    ['label'=>'Capaian Anggaran (Rp)',    'dot'=>'#92600a','prefix'=>'capaian_anggaran_tw', 'fmt'=>true ],
+];
 @endphp
 
 @if(session('success'))
