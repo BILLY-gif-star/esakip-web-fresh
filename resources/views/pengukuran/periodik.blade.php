@@ -85,7 +85,11 @@
 .sheet-tab.active{background:rgba(69,198,122,.25);color:#fff;font-weight:600;}
 
 /* ─── TABLE ──────────────────────────────────────────── */
-.xls-scroll{overflow-x:auto;overflow-y:auto;max-height:600px;}
+.xls-scroll{
+    overflow:visible!important;
+    max-height:none!important;
+    zoom: 0.55;
+}
 
 .xls-table{
     border-collapse:collapse;font-size:12px;width:100%;
@@ -350,36 +354,32 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
 
 /* Print — tetap terang & rapi, dark theme tidak dipaksakan ke hasil cetak */
 @media print{
-    @page{ size: landscape; margin: 8mm; }
+    @page{ size: landscape; margin: 6mm; }
 
     .xls-toolbar,.form-panel,#saveStatusBar,.no-print,.ctx-menu,
     .aksi-btn,.aksi-sm{display:none!important;}
 
-    /* Wajib: hilangkan batasan lebar & scroll, biar tabel menyusut
-       otomatis mengikuti lebar kertas, bukan kepotong */
     .xls-scroll{
         overflow:visible!important;
         max-height:none!important;
+        transform: scale(0.6);
+        transform-origin: top left;
     }
     .xls-table{
         min-width:0!important;
-        width:100%!important;
-        table-layout:fixed!important;
+        width:max-content!important;
+        table-layout:auto!important;
     }
-
-    /* Sticky header gak relevan di kertas, malah bisa bikin aneh */
     .xls-th,.row-num{ position:static!important; }
-
-    /* Perkecil font & padding biar 25+ kolom tetap muat & kebaca */
-    .xls-table th,.xls-table td{ padding:2px 3px!important; font-size:7px!important; }
-    .xls-th{ font-size:6.5px!important; white-space:normal!important; }
-    .xls-td{ white-space:normal!important; word-break:break-word!important; }
+    .xls-table th,.xls-table td{ padding:3px 5px!important; font-size:9px!important; white-space:normal!important; }
+    .xls-th{ font-size:8.5px!important; }
+    .xls-td{ word-break:normal!important; overflow-wrap:break-word!important; }
 
     .xls-table th{background:#e2e8f0!important;color:#000!important;}
     .xls-table td{color:#000!important;background:#fff!important;}
     .sasaran-cell{background:#dbeafe!important;}
     .sasaran-cell-text{color:#1d4ed8!important;}
-    .xls-input{color:#000!important;font-size:7px!important;}
+    .xls-input{color:#000!important;font-size:9px!important;}
     .sheet-header,.xls-statusbar{background:#e2e8f0!important;color:#000!important;}
 }
 
@@ -509,37 +509,16 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
                     <th colspan="4" class="xls-th sec-cap-a">Capaian Anggaran <span style="opacity:.7;font-weight:400;">(10)</span></th>
                     <th class="xls-th" rowspan="2" style="min-width:72px;font-size:10px;">Aksi</th>
                 </tr>
+               @php
+                    $twGroups = ['sec-target','sec-program','sec-anggaran','sec-cap-k','sec-cap-p','sec-cap-a'];
+                    $twWide   = ['sec-anggaran','sec-cap-a']; // grup yang butuh kolom lebih lebar (angka rupiah)
+                @endphp
                 <tr>
-                    {{-- Target Kinerja --}}
-                    <th class="xls-th sub sec-target" style="min-width:60px;">TW1</th>
-                    <th class="xls-th sub sec-target" style="min-width:60px;">TW2</th>
-                    <th class="xls-th sub sec-target" style="min-width:60px;">TW3</th>
-                    <th class="xls-th sub sec-target" style="min-width:60px;">TW4</th>
-                    {{-- Target Program --}}
-                    <th class="xls-th sub sec-program" style="min-width:60px;">TW1</th>
-                    <th class="xls-th sub sec-program" style="min-width:60px;">TW2</th>
-                    <th class="xls-th sub sec-program" style="min-width:60px;">TW3</th>
-                    <th class="xls-th sub sec-program" style="min-width:60px;">TW4</th>
-                    {{-- Anggaran --}}
-                    <th class="xls-th sub sec-anggaran" style="min-width:90px;">TW1</th>
-                    <th class="xls-th sub sec-anggaran" style="min-width:90px;">TW2</th>
-                    <th class="xls-th sub sec-anggaran" style="min-width:90px;">TW3</th>
-                    <th class="xls-th sub sec-anggaran" style="min-width:90px;">TW4</th>
-                    {{-- Capaian Kinerja --}}
-                    <th class="xls-th sub sec-cap-k" style="min-width:60px;">TW1</th>
-                    <th class="xls-th sub sec-cap-k" style="min-width:60px;">TW2</th>
-                    <th class="xls-th sub sec-cap-k" style="min-width:60px;">TW3</th>
-                    <th class="xls-th sub sec-cap-k" style="min-width:60px;">TW4</th>
-                    {{-- Capaian Program --}}
-                    <th class="xls-th sub sec-cap-p" style="min-width:60px;">TW1</th>
-                    <th class="xls-th sub sec-cap-p" style="min-width:60px;">TW2</th>
-                    <th class="xls-th sub sec-cap-p" style="min-width:60px;">TW3</th>
-                    <th class="xls-th sub sec-cap-p" style="min-width:60px;">TW4</th>
-                    {{-- Capaian Anggaran --}}
-                    <th class="xls-th sub sec-cap-a" style="min-width:90px;">TW1</th>
-                    <th class="xls-th sub sec-cap-a" style="min-width:90px;">TW2</th>
-                    <th class="xls-th sub sec-cap-a" style="min-width:90px;">TW3</th>
-                    <th class="xls-th sub sec-cap-a" style="min-width:90px;">TW4</th>
+                    @foreach($twGroups as $secClass)
+                        @foreach(['TW1','TW2','TW3','TW4'] as $twLabel)
+                        <th class="xls-th sub {{ $secClass }}" style="min-width:{{ in_array($secClass, $twWide) ? '90px' : '60px' }};">{{ $twLabel }}</th>
+                        @endforeach
+                    @endforeach
                 </tr>
             </thead>
 
@@ -584,15 +563,8 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
                 {{-- NAMA INDIKATOR --}}
                 <td class="xls-td left" style="font-weight:600;min-width:160px;">{{ $item->indikator ?? '-' }}</td>
 
-                {{-- TARGET KINERJA TW1-4 --}}
-                @foreach(['target_kinerja_tw1','target_kinerja_tw2','target_kinerja_tw3','target_kinerja_tw4'] as $field)
-                <td class="xls-td">
-                    <input type="text" class="xls-input {{ $isOperator ? '' : 'readonly' }}"
-                        value="{{ $item->$field ?? '' }}" {{ $isOperator ? '' : 'readonly' }}
-                        data-id="{{ $item->id }}" data-field="{{ $field }}"
-                        title="{{ strtoupper(str_replace('_',' ',$field)) }}">
-                </td>
-                @endforeach
+               {{-- TARGET KINERJA TW 1-4 --}}
+                @include('partials.tw-input-cells', ['prefix' => 'target_kinerja_tw', 'fmt' => false])
 
                 {{-- SASARAN PROGRAM --}}
                 <td class="xls-td left" style="font-size:11px;color:#475569;min-width:130px;">
@@ -600,14 +572,7 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
                 </td>
 
                 {{-- TARGET PROGRAM TW1-4 --}}
-                @foreach(['target_program_tw1','target_program_tw2','target_program_tw3','target_program_tw4'] as $field)
-                <td class="xls-td">
-                    <input type="text" class="xls-input {{ $isOperator ? '' : 'readonly' }}"
-                        value="{{ $item->$field ?? '' }}" {{ $isOperator ? '' : 'readonly' }}
-                        data-id="{{ $item->id }}" data-field="{{ $field }}"
-                        title="{{ strtoupper(str_replace('_',' ',$field)) }}">
-                </td>
-                @endforeach
+                @include('partials.tw-input-cells', ['prefix' => 'target_program_tw', 'fmt' => false])
 
                 {{-- PENANGGUNG JAWAB --}}
                 <td class="xls-td left" style="font-size:11px;color:#475569;min-width:100px;">
@@ -615,46 +580,16 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
                 </td>
 
                 {{-- ANGGARAN TW1-4 --}}
-                @foreach(['anggaran_tw1','anggaran_tw2','anggaran_tw3','anggaran_tw4'] as $field)
-                <td class="xls-td">
-                    <input type="text" class="xls-input anggaran-fmt {{ $isOperator ? '' : 'readonly' }}"
-                        value="{{ number_format($item->$field ?? 0, 0, ',', '.') }}"
-                        {{ $isOperator ? '' : 'readonly' }}
-                        data-id="{{ $item->id }}" data-field="{{ $field }}"
-                        title="{{ strtoupper(str_replace('_',' ',$field)) }}">
-                </td>
-                @endforeach
+                @include('partials.tw-input-cells', ['prefix' => 'anggaran_tw', 'fmt' => true])
 
-                {{-- CAPAIAN KINERJA TW1-4 --}}
-                @foreach(['capaian_kinerja_tw1','capaian_kinerja_tw2','capaian_kinerja_tw3','capaian_kinerja_tw4'] as $field)
-                <td class="xls-td">
-                    <input type="text" class="xls-input {{ $isOperator ? '' : 'readonly' }}"
-                        value="{{ $item->$field ?? '' }}" {{ $isOperator ? '' : 'readonly' }}
-                        data-id="{{ $item->id }}" data-field="{{ $field }}"
-                        title="{{ strtoupper(str_replace('_',' ',$field)) }}">
-                </td>
-                @endforeach
+               {{-- CAPAAIAN KINERJA TW1-4 --}}
+                @include('partials.tw-input-cells', ['prefix' => 'capaian_kinerja_tw', 'fmt' => false])
 
                 {{-- CAPAIAN PROGRAM TW1-4 --}}
-                @foreach(['capaian_program_tw1','capaian_program_tw2','capaian_program_tw3','capaian_program_tw4'] as $field)
-                <td class="xls-td">
-                    <input type="text" class="xls-input {{ $isOperator ? '' : 'readonly' }}"
-                        value="{{ $item->$field ?? '' }}" {{ $isOperator ? '' : 'readonly' }}
-                        data-id="{{ $item->id }}" data-field="{{ $field }}"
-                        title="{{ strtoupper(str_replace('_',' ',$field)) }}">
-                </td>
-                @endforeach
+               @include('partials.tw-input-cells', ['prefix' => 'capaian_program_tw', 'fmt' => false])
 
                 {{-- CAPAIAN ANGGARAN TW1-4 --}}
-                @foreach(['capaian_anggaran_tw1','capaian_anggaran_tw2','capaian_anggaran_tw3','capaian_anggaran_tw4'] as $field)
-                <td class="xls-td">
-                    <input type="text" class="xls-input anggaran-fmt {{ $isOperator ? '' : 'readonly' }}"
-                        value="{{ number_format($item->$field ?? 0, 0, ',', '.') }}"
-                        {{ $isOperator ? '' : 'readonly' }}
-                        data-id="{{ $item->id }}" data-field="{{ $field }}"
-                        title="{{ strtoupper(str_replace('_',' ',$field)) }}">
-                </td>
-                @endforeach
+               @include('partials.tw-input-cells', ['prefix' => 'capaian_anggaran_tw', 'fmt' => true])
 
                 {{-- AKSI INDIKATOR --}}
                 <td class="xls-td nowrap" style="padding:4px 3px;">

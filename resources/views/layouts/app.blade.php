@@ -610,6 +610,23 @@ tbody tr:hover td { background:rgba(255,255,255,.025); }
   .stats-grid { grid-template-columns: 1fr; }
   .page-content { padding: 12px; }
 }
+
+/* ══════════════════════════════════════════
+   PRINT — sembunyikan menu/chrome aplikasi,
+   biar yang kecetak cuma konten halamannya
+══════════════════════════════════════════ */
+@media print {
+  .sidebar-overlay,
+  .sidebar,
+  .topbar,
+  .file-error-overlay,
+  .alert { display: none !important; }
+
+  .main-content { margin-left: 0 !important; }
+  .page-content { padding: 0 !important; }
+
+  body { background: #fff !important; }
+}
 </style>
 </head>
 <body>
