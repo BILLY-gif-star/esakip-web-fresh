@@ -8,3 +8,4 @@
         title="{{ strtoupper(str_replace('_',' ',$field)) }}">
 </td>
 @endforeach
+

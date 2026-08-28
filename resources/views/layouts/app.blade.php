@@ -711,6 +711,11 @@ tbody tr:hover td { background:rgba(255,255,255,.025); }
       <div class="nav-divider"></div>
       <div class="sidebar-label">Manajemen</div>
 
+      <a href="{{ route('admin.landing') }}" class="nav-item {{ request()->routeIs('admin.landing') ? 'active' : '' }}">
+      <span class="nav-icon">🖼️</span>
+      <span class="nav-label">Landing Page</span>
+      </a>
+
       <a href="{{ route('admin.pengguna') }}" class="nav-item {{ request()->routeIs('admin.pengguna') ? 'active' : '' }}">
         <span class="nav-icon">👥</span>
         <span class="nav-label">Pengguna</span>

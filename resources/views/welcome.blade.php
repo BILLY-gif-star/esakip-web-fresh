@@ -54,7 +54,7 @@
       inset: 0;
       z-index: -2;
       background-color: #12467E;
-      background-image: url('{{ asset('assets/staff.jpeg') }}');
+      background-image: url('{{ $img['staff_photo'] }}');
       background-blend-mode: screen;
       background-size: cover;
       background-position: center 12%;
@@ -528,7 +528,7 @@
   <header class="letterhead">
     <div class="letterhead-inner">
       <div class="brand">
-        <img src="{{ asset('assets/logo_ntt.png') }}"
+        <img src="{{ $img['logo'] }}"
              alt="Lambang Provinsi Nusa Tenggara Timur"
              class="seal"
              onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23D9A441%22 stroke-width=%221.6%22><path d=%22M3 21h18%22/><path d=%22M5 21V9l7-5 7 5v12%22/><path d=%22M9 21v-6h6v6%22/><path d=%22M9 9h.01M12 9h.01M15 9h.01%22/></svg>'">
@@ -690,19 +690,19 @@
 
   <section id="galeri" style="padding-top: 32px; padding-bottom: 32px;">
     <div class="slideshow" id="slideshow">
-      <div class="slide active" style="background-image: url('{{ asset('assets/staff.jpeg') }}');">
+      <div class="slide active" style="background-image: url('{{ $img['gallery_1'] }}');">
         <div class="slide-caption">
           <span class="slide-tag">Rapat Koordinasi</span>
           <h3>Evaluasi Kinerja Perangkat Daerah se-NTT</h3>
         </div>
       </div>
-      <div class="slide" style="background-image: url('{{ asset('assets/staff.jpeg') }}');">
+      <div class="slide" style="background-image: url('{{ $img['gallery_2'] }}') }}');">
         <div class="slide-caption">
           <span class="slide-tag">Cascading Kinerja</span>
           <h3>Sinkronisasi Indikator OPD dengan Sasaran Provinsi</h3>
         </div>
       </div>
-      <div class="slide" style="background-image: url('{{ asset('assets/staff.jpeg') }}');">
+      <div class="slide" style="background-image: url('{{ $img['gallery_3'] }}');">
         <div class="slide-caption">
           <span class="slide-tag">Pelaporan LKIP</span>
           <h3>Dokumentasi Akuntabilitas Kinerja Terpadu</h3>

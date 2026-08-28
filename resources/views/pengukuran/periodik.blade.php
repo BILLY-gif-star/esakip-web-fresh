@@ -793,27 +793,7 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
 
                 <div class="tw-block">
                     <div style="font-size:11px;font-weight:700;color:#444;margin-bottom:8px;">Isian Per Triwulan (TW1 — TW4)</div>
-                    @foreach($twSecs as $sec)
-                    <div class="tw-section" style="{{ $loop->last ? 'margin-bottom:0;':'' }}">
-                        <div class="tw-section-label">
-                            <span class="tw-dot" style="background:{{ $sec['dot'] }};"></span>
-                            {{ $sec['label'] }}
-                            @isset($sec['note'])<span style="font-weight:400;color:#94a3b8;">{{ $sec['note'] }}</span>@endisset
-                        </div>
-                        <div class="form-grid-4">
-                            @foreach([1,2,3,4] as $tw)
-                            <div class="tw-card">
-                                <div class="tw-card-head">TW {{ ['I','II','III','IV'][$tw-1] }}</div>
-                                <div class="tw-card-body">
-                                    <input type="text" name="{{ $sec['prefix'] }}{{ $tw }}[]"
-                                           class="tw-card-inp{{ $sec['fmt'] ? ' anggaran-fmt':'' }}"
-                                           placeholder="{{ $sec['fmt'] ? '0':'—' }}">
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endforeach
+                    @include('partials.tw-block')
                 </div>
 
                 <div class="form-grid-2" style="margin-top:12px;">
@@ -919,30 +899,10 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
                                         <input type="text" name="penanggung_jawab[]" class="form-inp" placeholder="Nama jabatan atau unit kerja">
                                     </div>
                                 </div>
-                                <div class="tw-block">
-                                    <div style="font-size:11px;font-weight:700;color:#444;margin-bottom:8px;">Isian Per Triwulan (TW1 — TW4)</div>
-                                    @foreach($twSecs as $sec)
-                                    <div class="tw-section" style="{{ $loop->last ? 'margin-bottom:0;':'' }}">
-                                        <div class="tw-section-label">
-                                            <span class="tw-dot" style="background:{{ $sec['dot'] }};"></span>
-                                            {{ $sec['label'] }}
-                                            @isset($sec['note'])<span style="font-weight:400;color:#94a3b8;">{{ $sec['note'] }}</span>@endisset
-                                        </div>
-                                        <div class="form-grid-4">
-                                            @foreach([1,2,3,4] as $tw)
-                                            <div class="tw-card">
-                                                <div class="tw-card-head">TW {{ ['I','II','III','IV'][$tw-1] }}</div>
-                                                <div class="tw-card-body">
-                                                    <input type="text" name="{{ $sec['prefix'] }}{{ $tw }}[]"
-                                                        class="tw-card-inp{{ $sec['fmt'] ? ' anggaran-fmt':'' }}"
-                                                        placeholder="{{ $sec['fmt'] ? '0':'—' }}">
-                                                </div>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
+                              <div class="tw-block">
+                                <div style="font-size:11px;font-weight:700;color:#444;margin-bottom:8px;">Isian Per Triwulan (TW1 — TW4)</div>
+                                @include('partials.tw-block')
+                            </div>
                                 <div class="form-grid-2" style="margin-top:10px;">
                                     <div>
                                         <label class="form-lbl">Keterangan / Catatan</label>
@@ -984,6 +944,8 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
 
 @section('scripts')
 <script>
+
+var TW_SECS = @json($twSecs);
 /* ══════════════════════════════════════════════════
    FORMAT RIBUAN
 ══════════════════════════════════════════════════ */
@@ -1225,15 +1187,7 @@ document.querySelectorAll('#modalTambahIndikator .anggaran-fmt').forEach(applyFo
         });
         if(countEl)countEl.textContent=blocks.length;
     }
-
-    var twSecs=[
-        {label:'Target Kinerja',          dot:'#1f4e79',prefix:'target_kinerja_tw', fmt:false},
-        {label:'Target Program/Kegiatan', dot:'#1f4e79',prefix:'target_program_tw', fmt:false},
-        {label:'Anggaran (Rp)',           dot:'#4a235a',prefix:'anggaran_tw',        fmt:true },
-        {label:'Capaian Kinerja',         dot:'#145a32',prefix:'capaian_kinerja_tw', fmt:false,note:'(kosongkan jika belum ada)'},
-        {label:'Capaian Program/Kegiatan',dot:'#1a5276',prefix:'capaian_program_tw', fmt:false},
-        {label:'Capaian Anggaran (Rp)',   dot:'#7b241c',prefix:'capaian_anggaran_tw',fmt:true },
-    ];
+        var twSecs = TW_SECS;
 
     function buildBlock(){
         var block=document.createElement('div');block.className='indikator-block';

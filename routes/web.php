@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PerjanjianController;
@@ -35,9 +36,7 @@ Route::get('/debug-env', function () {
 // ════════════════════════════════════════════════════════════
 //  PUBLIK — tidak butuh login
 // ════════════════════════════════════════════════════════════
-Route::get('/', function () {
-    return view('welcome'); // landing page kamu
-})->name('welcome');
+Route::get('/welcome', [LandingController::class, 'show'])->name('welcome');
 
 Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
@@ -255,6 +254,11 @@ Route::middleware('auth.esakip')->group(function () {
     //  ADMIN ONLY
     // ════════════════════════════════════════════════════════
     Route::middleware('role.admin')->prefix('admin')->name('admin.')->group(function () {
+
+
+         Route::get('/landing', [LandingController::class, 'admin'])->name('landing');
+         Route::post('/landing/{key}', [LandingController::class, 'update'])->name('landing.update');
+         Route::post('/landing/{key}/reset', [LandingController::class, 'reset'])->name('landing.reset');
 
         // ── Manajemen Pengguna ────────────────────────────────
         Route::get('/pengguna',                      [AdminController::class, 'pengguna'])->name('pengguna');
