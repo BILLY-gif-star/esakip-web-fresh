@@ -316,7 +316,6 @@
                            border-radius:8px;width:30px;height:30px;color:#a1a1aa;
                            font-size:16px;cursor:pointer;display:flex;align-items:center;
                            justify-content:center;flex-shrink:0;">
-                ✕
             </button>
         </div>
 
