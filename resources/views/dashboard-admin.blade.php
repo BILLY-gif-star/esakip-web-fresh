@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','Dasbor E-SAKIPKU')
-@section('page-title','DASBOR')
+@section('title','Dasboard E-SAKIPKU')
+@section('page-title','DASHBOARD')
 
 @section('content')
 <style>

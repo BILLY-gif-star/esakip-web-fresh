@@ -64,27 +64,7 @@
         Unduh Excel
     </a>
 
-    {{-- Tombol Unduh PDF --}}
-    <a href="{{ route('rekapan.hasil.pdf', ['tahun' => $tahun]) }}"
-       style="display:inline-flex;align-items:center;gap:7px;
-              background:linear-gradient(135deg,#dc2626,#b91c1c);
-              padding:9px 20px;border-radius:40px;
-              color:#fff;font-weight:600;font-size:12px;
-              text-decoration:none;
-              box-shadow:0 4px 14px rgba(220,38,38,.35);
-              transition:all .2s;"
-       onmouseover="this.style.transform='translateY(-2px)'"
-       onmouseout="this.style.transform='translateY(0)'">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        Unduh PDF
-    </a>
-
+   
 </div>
 @endsection
 

@@ -709,7 +709,7 @@ tbody tr:hover td { background:rgba(255,255,255,.025); }
       </div>
 
       <div class="nav-divider"></div>
-      <div class="sidebar-label">Manajemen</div>
+      <div class="sidebar-label">Manajemen Pengguna</div>
 
       <a href="{{ route('admin.landing') }}" class="nav-item {{ request()->routeIs('admin.landing') ? 'active' : '' }}">
       <span class="nav-icon">🖼️</span>
@@ -718,7 +718,7 @@ tbody tr:hover td { background:rgba(255,255,255,.025); }
 
       <a href="{{ route('admin.pengguna') }}" class="nav-item {{ request()->routeIs('admin.pengguna') ? 'active' : '' }}">
         <span class="nav-icon">👥</span>
-        <span class="nav-label">Pengguna</span>
+        <span class="nav-label">Kelola OPD</span>
       </a>
 
       <a href="{{ route('admin.persetujuan') }}" class="nav-item {{ request()->routeIs('admin.persetujuan') ? 'active' : '' }}">
@@ -732,12 +732,18 @@ tbody tr:hover td { background:rgba(255,255,255,.025); }
 
       <a href="{{ route('admin.klaster') }}" class="nav-item {{ request()->routeIs('admin.klaster*') ? 'active' : '' }}">
         <span class="nav-icon">🏷️</span>
-        <span class="nav-label">Klaster OPD</span>
+        <span class="nav-label">Kelola Klaster </span>
       </a>
 
       <a href="{{ route('admin.arsip') }}" class="nav-item {{ request()->routeIs('admin.arsip*') ? 'active' : '' }}">
         <span class="nav-icon">🗂️</span>
         <span class="nav-label">Arsip Dokumen</span>
+      </a>
+
+      <a href="{{ route('rekapan.hasil') }}" class="nav-item {{ request()->routeIs('rekapan.hasil*') ? 'active' : '' }}">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Rekapan Hasil LKE</span>
+        <span class="nav-badge" style="background: #6366f1;">AKIP</span>
       </a>
 
     @endif

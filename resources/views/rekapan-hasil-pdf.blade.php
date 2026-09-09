@@ -23,12 +23,7 @@
               text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
         📥 Excel
     </a>
-    <a href="{{ route('rekapan.hasil.pdf', ['tahun' => $tahun]) }}"
-       style="background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;padding:8px 18px;
-              border-radius:40px;color:white;font-weight:600;font-size:12px;
-              text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-        📄 PDF
-    </a>
+
     @endif
 </div>
 @endsection

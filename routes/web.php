@@ -36,6 +36,8 @@ Route::get('/debug-env', function () {
 // ════════════════════════════════════════════════════════════
 //  PUBLIK — tidak butuh login
 // ════════════════════════════════════════════════════════════
+
+Route::get('/', [LandingController::class, 'show']);
 Route::get('/welcome', [LandingController::class, 'show'])->name('welcome');
 
 Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
@@ -97,7 +99,6 @@ Route::middleware('auth.esakip')->group(function () {
     Route::middleware('role.admin')->group(function () {
         Route::get('/rekapan-hasil',                [RekapanHasilLkeController::class, 'index'])->name('rekapan.hasil');
         Route::get('/rekapan-hasil/download-excel', [RekapanHasilLkeController::class, 'downloadExcel'])->name('rekapan.hasil.excel');
-        Route::get('/rekapan-hasil/download-pdf',   [RekapanHasilLkeController::class, 'downloadPdf'])->name('rekapan.hasil.pdf');
     });
 
     // ════════════════════════════════════════════════════════
