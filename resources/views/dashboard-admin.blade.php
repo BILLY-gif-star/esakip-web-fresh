@@ -5,20 +5,19 @@
 @section('content')
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Cinzel:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --dark-card:   #1a1a24;
-    --dark-border: rgba(255,255,255,.08);
+    --dash-card:   var(--bg-card-solid);
+    --dash-border: var(--border-color);
     --accent-primary:  #6366f1;
     --accent-success:  #10b981;
     --accent-warning:  #f59e0b;
     --accent-danger:   #ef4444;
-    --text-primary:    #ffffff;
-    --text-secondary:  #a1a1aa;
-    --text-muted:      #71717a;
 }
 
-body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:'Inter',sans-serif; }
+body { font-family:'Inter',sans-serif; }
+
 
 /* ── KPI Grid ── */
 .kpi-grid {
@@ -28,7 +27,7 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
     margin-bottom: 28px;
 }
 .kpi-card {
-    background: linear-gradient(145deg,#1e1e2e,#16161f);
+    background: var(--bg-card);
     border-radius: 22px;
     padding: 22px 22px 20px;
     border: 1px solid rgba(255,255,255,.07);
@@ -90,10 +89,10 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
     margin-bottom: 28px;
 }
 .klaster-card {
-    background: linear-gradient(145deg,#1e1e2e,#16161f);
+    background: var(--bg-card);
     border-radius: 20px;
     padding: 20px 22px;
-    border: 1px solid rgba(255,255,255,.07);
+    border: 1px solid var(--border-color);
     position: relative;
     overflow: hidden;
     transition: transform .25s, box-shadow .25s;
@@ -176,7 +175,7 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
     font-family:'Cinzel','Georgia',serif;
     font-size:34px; font-weight:600; line-height:1.15; margin-bottom:12px;
     position:relative; z-index:1; letter-spacing:2px;
-    background:linear-gradient(100deg,#ffffff 0%,#e0e7ff 30%,#a5b4fc 60%,#c4b5fd 85%,#f0abfc 100%);
+   background:linear-gradient(100deg,#ffffff 0%,#e0e7ff 30%,#a5b4fc 60%,#c4b5fd 85%,#f0abfc 100%);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
 }
 .welcome-subtitle {
@@ -196,11 +195,17 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
     gap:16px; margin-top:26px; position:relative; z-index:1;
 }
 .quick-link-card {
-    background:rgba(26,26,36,.9); backdrop-filter:blur(10px);
-    border-radius:18px; padding:20px 20px 16px;
-    text-decoration:none; border:1px solid rgba(255,255,255,.07);
-    transition:transform .3s cubic-bezier(.4,0,.2,1), border-color .3s, background .3s, box-shadow .3s;
-    display:flex; flex-direction:column; position:relative; overflow:hidden;
+    background: var(--bg-card-solid);
+    backdrop-filter: blur(10px);
+    border-radius: 18px;
+    padding: 20px 20px 16px;
+    text-decoration: none;
+    border: 1px solid var(--border-color);
+    transition: transform .3s cubic-bezier(.4,0,.2,1), border-color .3s, background .3s, box-shadow .3s;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
 }
 .quick-link-card:hover {
     transform:translateY(-6px);
@@ -211,7 +216,7 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
 }
 .quick-icon {
     width:48px; height:48px; border-radius:15px;
-    background:rgba(255,255,255,.06);
+    background: var(--bg-input);  
     display:flex; align-items:center; justify-content:center;
     font-size:22px; margin-bottom:14px;
     transition:transform .35s cubic-bezier(.34,1.56,.64,1), background .3s;
@@ -221,7 +226,7 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
 .quick-content  { flex:1; position:relative; z-index:1; }
 .quick-title    { font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:6px; line-height:1.3; }
 .quick-desc     { font-size:11.5px; color:var(--text-muted); line-height:1.5; }
-.quick-divider  { height:1px; background:rgba(255,255,255,.07); margin:14px 0 12px; }
+.quick-divider { height:1px; background: var(--border-color); margin:14px 0 12px; }
 .quick-footer   { display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1; }
 .quick-footer-label { font-size:10.5px; font-weight:600; color:var(--ql-accent-text,#a5b4fc); letter-spacing:.4px; text-transform:uppercase; }
 .quick-arrow { font-size:15px; color:var(--ql-accent-text,#a5b4fc); opacity:0; transform:translateX(-6px); transition:opacity .3s, transform .35s cubic-bezier(.4,0,.2,1); }
@@ -236,10 +241,10 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
     margin-bottom: 28px;
 }
 .analytics-card {
-    background: var(--dark-card);
+    background: var(--dash-card);
     border-radius: 20px;
     padding: 20px;
-    border: 1px solid var(--dark-border);
+    border: 1px solid var(--dash-border);
 }
 .analytics-label {
     font-size: 12px;
@@ -429,10 +434,10 @@ body { background: linear-gradient(135deg,#0a0a0f 0%,#0f0f14 100%); font-family:
                 <div class="juknis-badge">⬇️ Download Juknis</div>
             </a>
         @else
-            <div class="kpi-value" style="font-size:18px; font-weight:600; color:#6b7280;">📭</div>
+           <div class="kpi-value" style="font-size:18px; font-weight:600; color:var(--text-muted);">📭</div>
             <div class="kpi-label">Juknis {{ $i }}</div>
             <div class="kpi-desc">Belum tersedia</div>
-            <div class="juknis-badge" style="background:rgba(139,92,246,.08); color:#6b7280;">Admin akan upload</div>
+            <div class="juknis-badge" style="background:rgba(139,92,246,.08); color:var(--text-muted);">Admin akan upload</div>
         @endif
     </div>
     @endfor

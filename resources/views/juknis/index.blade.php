@@ -15,13 +15,12 @@
 @section('content')
 
 <style>
-  /* Tambahan transisi halus untuk modal */
   .modal-friendly {
     transition: opacity 0.3s ease;
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,.65);
     backdrop-filter: blur(4px);
     z-index: 1000;
     align-items: center;
@@ -29,30 +28,171 @@
   }
   .modal-friendly.open { display: flex; }
 
-  .card-glass { background: white; border-radius: 20px; border: 1px solid #e5e7eb; overflow: hidden; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-  .card-header-glass { background: linear-gradient(135deg, #f8fafc, #f1f5f9); padding: 16px 24px; border-bottom: 1px solid #e5e7eb; }
-  .card-header-glass h3 { font-size: 16px; font-weight: 700; margin: 0; }
-  .card-body-glass { padding: 24px; }
-  
+  .card-glass {
+    background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .card-header-glass {
+    background: rgba(69,198,122,.1);
+    border-bottom: 1px solid rgba(69,198,122,.2);
+    padding: 14px 20px;
+  }
+  .card-header-glass h3 { font-size: 14px; font-weight: 700; margin: 0; color: #fff; }
+  .card-body-glass { padding: 20px; }
+
   .table-glass { width: 100%; border-collapse: collapse; }
-  .table-glass th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
-  .table-glass td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-  .table-glass tbody tr:hover { background: #f9fafb; }
+  .table-glass th {
+    background: rgba(69,198,122,.12);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: rgba(255,255,255,.85);
+    border-bottom: 2px solid rgba(69,198,122,.25);
+  }
+  .table-glass td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    font-size: 13px;
+    color: rgba(255,255,255,.85);
+  }
+  .table-glass tbody tr:hover td { background: rgba(255,255,255,.03); }
+  .text-muted { color: rgba(255,255,255,.4) !important; }
 
-  .btn-upload { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 40px; padding: 8px 20px; color: white; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-  .btn-primary-glass { background: linear-gradient(135deg, #4f46e5, #6366f1); border: none; border-radius: 40px; padding: 6px 14px; color: white; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
-  .btn-outline-glass { background: white; border: 1px solid #e5e7eb; border-radius: 40px; padding: 6px 14px; color: #6b7280; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
-  .btn-danger-glass { background: white; border: 1px solid #fee2e2; border-radius: 40px; padding: 6px 14px; color: #dc2626; font-size: 12px; font-weight: 600; cursor: pointer; }
+  /* ── Tombol, samakan dengan palet dark-glass ── */
+  .btn-upload {
+    background: rgba(69,198,122,.25);
+    border: 1px solid #45c67a;
+    border-radius: 6px;
+    padding: 8px 18px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .2s;
+  }
+  .btn-upload:hover { background: rgba(69,198,122,.4); }
 
-  .modal-content-friendly { background: white; border-radius: 24px; width: 500px; max-width: 95%; animation: slideIn 0.3s ease; }
+  .btn-primary-glass {
+    background: rgba(59,130,246,.2);
+    border: 1px solid rgba(59,130,246,.4);
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: #93c5fd;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .2s;
+  }
+  .btn-primary-glass:hover { background: rgba(59,130,246,.35); }
+
+  .btn-outline-glass {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: rgba(255,255,255,.75);
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all .2s;
+  }
+  .btn-outline-glass:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+  .btn-danger-glass {
+    background: rgba(226,75,74,.2);
+    border: 1px solid rgba(226,75,74,.4);
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: #f3a5a4;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-danger-glass:hover { background: rgba(226,75,74,.35); }
+
+  /* ── Modal ── */
+  .modal-content-friendly {
+    background: #16161f;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    width: 500px;
+    max-width: 95%;
+    box-shadow: 0 24px 64px rgba(0,0,0,.6);
+    animation: slideIn 0.3s ease;
+  }
   @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  
-  .form-control-friendly { width: 100%; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 12px; margin-top: 4px; outline: none; }
-  .form-control-friendly:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1); }
-  
-  .badge { display: inline-block; padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-  .badge-active { background: #d1fae5; color: #065f46; }
-  .badge-inactive { background: #fee2e2; color: #991b1b; }
+
+  .modal-header-friendly {
+    background: rgba(69,198,122,.15);
+    border-bottom: 1px solid rgba(69,198,122,.25);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 10px 10px 0 0;
+  }
+  .modal-title-friendly { font-size: 13px; font-weight: 600; color: #fff; }
+  .modal-close-friendly {
+    background: rgba(255,255,255,.1);
+    border: none;
+    color: #fff;
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close-friendly:hover { background: rgba(255,255,255,.2); }
+
+  .modal-body-friendly { padding: 18px; }
+  .modal-footer-friendly {
+    padding: 11px 18px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.02);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .form-control-friendly {
+    width: 100%;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 4px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    color: #fff;
+    outline: none;
+    font-family: inherit;
+    transition: border-color .2s;
+  }
+  .form-control-friendly::placeholder { color: rgba(255,255,255,.3); }
+  .form-control-friendly:focus { border-color: #45c67a; background: rgba(255,255,255,.09); }
+  .form-control-friendly option { background: #1a1a2e; color: #fff; }
+
+  .small.font-weight-bold {
+    font-size: 11px; font-weight: 600; color: rgba(255,255,255,.5);
+    display: block; margin-bottom: 2px;
+  }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing:.3px; }
+  .badge-active { background: rgba(69,198,122,.2); color: #7fe3a8; }
+  .badge-inactive { background: rgba(226,75,74,.2); color: #f3a5a4; }
 </style>
 
 <div class="card-glass">

@@ -86,8 +86,9 @@
 
 /* ─── TABLE ──────────────────────────────────────────── */
 .xls-scroll{
-    overflow:visible!important;
-    max-height:none!important;
+   overflow-x:auto;     
+    overflow-y:visible;
+    max-height:none;
     zoom: 0.55;
 }
 

@@ -99,6 +99,103 @@
 }
 
 /* ══════════════════════════════════════════
+   JARING PENGAMAN MODE TERANG
+   Banyak halaman (Pengukuran Periodik, Juknis, dll)
+   & komponen topbar (notifikasi) masih tulis warna
+   dark-glass langsung (hex/rgba putih), bukan lewat
+   variable tema — jadi nggak otomatis berubah pas
+   Mode Terang aktif. Blok ini menutup celah itu.
+══════════════════════════════════════════ */
+
+/* ── 1. Area konten halaman (.page-content) ── */
+[data-theme="light"] .page-content {
+  color: #1e293b;
+}
+
+/* teks putih/abu-terang yang ditulis lewat inline style */
+[data-theme="light"] .page-content [style*="color:#fff"],
+[data-theme="light"] .page-content [style*="color: #fff"],
+[data-theme="light"] .page-content [style*="color:#ffffff"],
+[data-theme="light"] .page-content [style*="color: #ffffff"],
+[data-theme="light"] .page-content [style*="color:rgba(255,255,255"],
+[data-theme="light"] .page-content [style*="color: rgba(255,255,255"] {
+  color: #1e293b !important;
+}
+
+/* komponen dark-glass generik yang berulang di banyak halaman */
+[data-theme="light"] .page-content .xls-td,
+[data-theme="light"] .page-content .xls-th,
+[data-theme="light"] .page-content .xls-input,
+[data-theme="light"] .page-content .row-num,
+[data-theme="light"] .page-content .sheet-title-bar,
+[data-theme="light"] .page-content .sasaran-cell-text,
+[data-theme="light"] .page-content .xls-statusbar,
+[data-theme="light"] .page-content .form-lbl,
+[data-theme="light"] .page-content .form-inp,
+[data-theme="light"] .page-content .form-ta,
+[data-theme="light"] .page-content .form-control-friendly,
+[data-theme="light"] .page-content .card-header-glass h3,
+[data-theme="light"] .page-content .table-glass td,
+[data-theme="light"] .page-content .table-glass th,
+[data-theme="light"] .page-content .modal-title-friendly,
+[data-theme="light"] .page-content .modal-head-title,
+[data-theme="light"] .page-content .indikator-block-title,
+[data-theme="light"] .page-content .ribbon-step,
+[data-theme="light"] .page-content .small.font-weight-bold,
+[data-theme="light"] .page-content .ctx-item {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .page-content .text-muted,
+[data-theme="light"] .page-content .xls-toolbar-label,
+[data-theme="light"] .page-content .tw-card-head,
+[data-theme="light"] .page-content .tw-section-label,
+[data-theme="light"] .page-content .ctx-label {
+  color: #64748b !important;
+}
+
+/* background dark-glass rgba(255,255,255,.0x) nyaris tak
+   kontras di atas body terang — kasih background solid tipis */
+[data-theme="light"] .page-content .sheet-wrap,
+[data-theme="light"] .page-content .xls-toolbar,
+[data-theme="light"] .page-content .form-panel,
+[data-theme="light"] .page-content .indikator-block,
+[data-theme="light"] .page-content .tw-block,
+[data-theme="light"] .page-content .tw-card,
+[data-theme="light"] .page-content .card-glass,
+[data-theme="light"] .page-content .modal-content-friendly,
+[data-theme="light"] .page-content .modal-box,
+[data-theme="light"] .page-content .ctx-menu {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .page-content input,
+[data-theme="light"] .page-content textarea,
+[data-theme="light"] .page-content select {
+  color: #1e293b !important;
+}
+
+/* ── 2. Notifikasi dropdown — DI LUAR .page-content,
+       diisi via JS pakai warna hex hardcoded, jadi
+       perlu safety net sendiri ── */
+[data-theme="light"] .notif-dropdown {
+  color: #1e293b;
+}
+[data-theme="light"] .notif-dropdown [style*="color:#fff"],
+[data-theme="light"] .notif-dropdown [style*="color: #fff"],
+[data-theme="light"] .notif-dropdown [style*="color:#e4e4e7"] {
+  color: #1e293b !important;
+}
+[data-theme="light"] .notif-dropdown [style*="color:#a1a1aa"],
+[data-theme="light"] .notif-dropdown [style*="color:#52525b"] {
+  color: #64748b !important;
+}
+[data-theme="light"] .notif-list > div[style*="color:#52525b"] {
+  color: #94a3b8 !important;
+}
+
+/* ══════════════════════════════════════════
    THEME TOGGLE BUTTON
 ══════════════════════════════════════════ */
 .theme-toggle-btn {
@@ -1314,20 +1411,6 @@ tbody tr:hover td {
   body { 
     background: #fff !important; 
   }
-  /* ══ Jaring pengaman Mode Terang ══
-   Banyak halaman isi (LKE, Perjanjian, dll) masih pakai warna teks
-   putih yang ditulis langsung, bukan lewat variable tema — jadi gak
-   otomatis berubah. Ini nge-paksa teks di area konten tetap gelap
-   & kebaca pas Mode Terang aktif. */
-[data-theme="light"] .page-content {
-  color: #1e293b;
-}
-[data-theme="light"] .page-content [style*="color:#fff"],
-[data-theme="light"] .page-content [style*="color: #fff"],
-[data-theme="light"] .page-content [style*="color:#ffffff"],
-[data-theme="light"] .page-content [style*="color: #ffffff"] {
-  color: #1e293b !important;
-}
 }
 </style>
 </head>
@@ -1498,37 +1581,6 @@ tbody tr:hover td {
         <a href="{{ route('evaluasi.lke') }}"    class="nav-sub {{ request()->routeIs('evaluasi.lke') ? 'active' : '' }}">LKE AKIP</a>
       </div>
 
-      <div class="nav-divider"></div>
-      <div class="sidebar-label">Klaster Evaluasi</div>
-
-      <a class="nav-item nav-group-toggle" onclick="toggleNav('grpKlaster', this)">
-        <span class="nav-icon">🏆</span>
-        <span class="nav-label">Klaster Evaluasi</span>
-        <span class="nav-arrow">▾</span>
-      </a>
-      <div class="nav-group-body {{ request()->is('klaster/*') ? 'open' : '' }}" id="grpKlaster">
-        <a href="{{ route('klaster.hasil.lke.gabungan') }}" class="nav-sub {{ request()->routeIs('klaster.hasil.lke.gabungan') ? 'active' : '' }}">Hasil LKE Gabungan</a>
-
-        @php
-          $kt = session('user.klaster_type');
-          $kl = session('user.klaster_level');
-          $klasterRoutes = [
-            'utama'     => ['klaster.utama.1','klaster.utama.2','klaster.utama.3'],
-            'pendukung' => ['klaster.pendukung.1','klaster.pendukung.2','klaster.pendukung.3'],
-            'tambahan'  => ['klaster.tambahan.1','klaster.tambahan.2','klaster.tambahan.3'],
-          ];
-        @endphp
-
-        @if($kt && $kl)
-          {{-- Operator hanya lihat klaster miliknya --}}
-          <a href="{{ route('klaster.'.$kt.'.'.$kl) }}"
-             class="nav-sub {{ request()->routeIs('klaster.'.$kt.'.'.$kl) ? 'active' : '' }}">
-             {{ ucfirst($kt) }} {{ ['1'=>'I','2'=>'II','3'=>'III'][$kl] ?? $kl }}
-             <span style="margin-left:auto;font-size:9px;background:rgba(212,152,46,.2);color:#f0b84a;padding:1px 6px;border-radius:10px;">Saya</span>
-          </a>
-        @endif
-      </div>
-
     @endif
 
     {{-- ════ EVALUATOR ════ --}}
@@ -1582,17 +1634,6 @@ tbody tr:hover td {
         @else {{ session('user.nama_daerah') ?? 'Operator' }}
         @endif
       </div>
-      @if($userRole === 'operator' && session('user.klaster_type'))
-        @php
-          $kt = session('user.klaster_type');
-          $kl = session('user.klaster_level');
-          $lvMap = ['1'=>'I','2'=>'II','3'=>'III'];
-        @endphp
-        <div class="klaster-badge klaster-{{ $kt }}">
-          {{ $kt === 'utama' ? '🏆' : ($kt === 'pendukung' ? '🛡️' : '➕') }}
-          {{ ucfirst($kt) }} {{ $lvMap[$kl] ?? '' }}
-        </div>
-      @endif
     </div>
   </div>
   
@@ -1636,7 +1677,7 @@ tbody tr:hover td {
           <div class="notif-dropdown" id="dropNotif">
             <div class="notif-header">
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:13px;font-weight:700;color:#fff;">Notifikasi</span>
+                <span style="font-size:13px;font-weight:700;color:var(--text-primary);">Notifikasi</span>
                 <span id="notifCount" style="display:none;font-size:10px;background:rgba(99,102,241,.2);color:#a5b4fc;padding:2px 8px;border-radius:20px;font-weight:600;"></span>
               </div>
               <button onclick="bacaSemua()" style="font-size:11px;color:#6366f1;background:none;border:none;cursor:pointer;font-weight:600;padding:4px 8px;border-radius:6px;transition:background .15s;" onmouseover="this.style.background='rgba(99,102,241,.1)'" onmouseout="this.style.background='none'">
@@ -1644,7 +1685,7 @@ tbody tr:hover td {
               </button>
             </div>
             <div class="notif-list" id="notifList">
-              <div style="padding:24px;text-align:center;color:#52525b;font-size:12px;">Memuat...</div>
+              <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12px;">Memuat...</div>
             </div>
           </div>
         </div>
@@ -1746,24 +1787,24 @@ function muatNotifikasi() {
 function renderNotif(list) {
   var el = document.getElementById('notifList');
   if (!list || !list.length) {
-    el.innerHTML = '<div style="padding:28px;text-align:center;color:#52525b;font-size:12px;">Belum ada notifikasi</div>';
+    el.innerHTML = '<div style="padding:28px;text-align:center;color:var(--text-muted);font-size:12px;">Belum ada notifikasi</div>';
     return;
   }
   el.innerHTML = list.map(function(n) {
     var w = WARNA_MAP[n.warna] || WARNA_MAP.indigo;
     var bgRow = n.sudah_dibaca ? 'transparent' : 'rgba(99,102,241,.04)';
     return `<div onclick="klikNotif(${n.id},'${n.url}')"
-      style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;background:${bgRow};transition:background .15s;"
-      onmouseover="this.style.background='rgba(255,255,255,.03)'"
+      style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border-light);cursor:pointer;background:${bgRow};transition:background .15s;"
+      onmouseover="this.style.background='var(--bg-hover)'"
       onmouseout="this.style.background='${bgRow}'">
       <div style="width:36px;height:36px;border-radius:10px;flex-shrink:0;background:${w.bg};border:1px solid ${w.border};display:flex;align-items:center;justify-content:center;font-size:16px;">${n.ikon}</div>
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;">
-          <span style="font-size:12px;font-weight:600;color:#e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.judul}</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.judul}</span>
           ${!n.sudah_dibaca ? `<span style="width:7px;height:7px;border-radius:50%;background:${w.dot};flex-shrink:0;"></span>` : ''}
         </div>
-        <p style="font-size:11.5px;color:#a1a1aa;line-height:1.45;margin:0 0 4px;">${n.pesan}</p>
-        <span style="font-size:10.5px;color:#52525b;">${n.waktu}</span>
+        <p style="font-size:11.5px;color:var(--text-muted);line-height:1.45;margin:0 0 4px;">${n.pesan}</p>
+        <span style="font-size:10.5px;color:var(--text-light);">${n.waktu}</span>
       </div>
     </div>`;
   }).join('');

@@ -5,24 +5,13 @@
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
-
-/* ══ FORCE BACKGROUND GELAP (Override Layout) ══ */
-html, body,
-.main-content,
-.page-content,
-.app-layout,
-[class*="content"],
-[class*="wrapper"] {
-    background: linear-gradient(135deg, #0a0a0f 0%, #0f0f14 100%) !important;
-    background-color: #0a0a0f !important;
-}
-
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
 :root{
-    --card-bg: linear-gradient(135deg,#1e1e2e,#181825);
-    --border: rgba(255,255,255,.08);
+    --card-bg: var(--bg-card);
+    --border: var(--border-color);
     --accent: #6366f1;
-    --text-main: #ffffff;
-    --text-sub: #a1a1aa;
+    --text-main: var(--text-primary);
+    --text-sub: var(--text-muted);
 }
 
 .card{
@@ -32,10 +21,9 @@ html, body,
     border: 1px solid var(--border);
     position: relative;
     overflow: hidden;
-    color: white;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    color: var(--text-main);
+    box-shadow: var(--shadow-card);
 }
-
 .card::after{
     content:'';
     position:absolute;
@@ -53,6 +41,9 @@ html, body,
     letter-spacing:2px;
     color:#818cf8;
 }
+[data-theme="light"] .welcome-small{
+    color: #6366f1;
+}
 
 .welcome-name{
     font-family:'Cinzel', serif;
@@ -60,12 +51,19 @@ html, body,
     font-weight:700;
     margin:6px 0;
     letter-spacing:2px;
-    background: linear-gradient(90deg,#ffffff,#a5b4fc,#818cf8,#c4b5fd);
+    background-image: linear-gradient(90deg,#ffffff,#a5b4fc,#818cf8,#c4b5fd);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 0 12px rgba(99,102,241,.25);
 }
 
+/* Mode Terang: gradient putih-terang nggak kebaca di atas
+   background terang, ganti ke gradient ungu-indigo pekat */
+[data-theme="light"] .welcome-name{
+    background-image: linear-gradient(90deg,#4338ca,#6366f1,#7c3aed,#9333ea);
+    text-shadow: none;
+}
 .welcome-sub{
     font-size:13px;
     color:#c4c4d0;
@@ -116,7 +114,7 @@ html, body,
 .klaster-tugas {
     font-size: 14px;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
     line-height: 1.3;
 }
 .klaster-tugas-empty {
@@ -138,11 +136,11 @@ html, body,
     margin-bottom: 20px;
 }
 .stat-card {
-    background: linear-gradient(135deg, #1e1e2e, #181825);
+    background: var(--bg-card)
     border-radius: 20px;
     padding: 20px;
     text-align: center;
-    border: 1px solid rgba(255,255,255,.08);
+    border: 1px solid var(--border-color)
 }
 .stat-value {
     font-size: 32px;
@@ -172,7 +170,7 @@ html, body,
     transition: width 0.5s ease;
 }
 .progress-text {
-    color: white;
+    color: var(--text-primary)
     font-size: 12px;
     font-weight: 700;
 }
@@ -186,7 +184,7 @@ html, body,
     background: rgba(99,102,241,.08);
     transition:.25s;
     text-decoration:none;
-    color:white;
+    color: var(--text-primary);
     display: block;
 }
 .action-card:hover{
@@ -371,7 +369,7 @@ html, body,
         <div class="klaster-badge" style="background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.15);">
             <div class="klaster-icon" style="background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.15);">⚠️</div>
             <div class="klaster-info">
-                <div class="klaster-label" style="color: #a1a1aa;">Klaster OPD</div>
+                <div class="klaster-label" style="color: var(--text-muted)">Klaster OPD</div>
                 <div class="klaster-tugas-empty">Klaster OPD belum ditentukan. Silakan hubungi admin.</div>
             </div>
         </div>
