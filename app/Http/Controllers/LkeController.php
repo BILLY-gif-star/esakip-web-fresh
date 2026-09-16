@@ -50,7 +50,6 @@ public function index(Request $request)
     $user  = Session::get('user');
     $tahun = (int) $request->input('tahun', $this->tahunEvaluasi());
 
-    // ⭐ Ambil daftar OPD yang memiliki user operator aktif
     $opdDenganOperator = DB::table('pengguna')
         ->where('role', 'operator')
         ->where('is_active', 1)
@@ -59,55 +58,39 @@ public function index(Request $request)
         ->unique()
         ->toArray();
 
-    // ==================== LOGIKA BERDASARKAN ROLE ====================
     if ($user['role'] === 'operator') {
         $opdId = $user['daerah_id'];
-        
         if (!in_array($opdId, $opdDenganOperator)) {
             $listOpd = collect();
             $opdId = null;
         } else {
-            $listOpd = DB::table('perangkat_daerah')
-                ->where('id', $opdId)
-                ->orderBy('nama')
-                ->get();
+            $listOpd = DB::table('perangkat_daerah')->where('id', $opdId)->orderBy('nama')->get();
         }
-            
     } elseif ($user['role'] === 'evaluator') {
         $assignedOpdIds = DB::table('evaluator_opd')
             ->where('evaluator_id', $user['id'])
             ->pluck('perangkat_daerah_id')
             ->toArray();
-        
+
         $availableOpdIds = array_intersect($assignedOpdIds, $opdDenganOperator);
-        
+
         if (empty($availableOpdIds)) {
             $listOpd = collect();
             $opdId = null;
         } else {
-            $listOpd = DB::table('perangkat_daerah')
-                ->whereIn('id', $availableOpdIds)
-                ->orderBy('nama')
-                ->get();
-            
+            $listOpd = DB::table('perangkat_daerah')->whereIn('id', $availableOpdIds)->orderBy('nama')->get();
             $opdId = $request->input('opd_id');
             if ($opdId && !in_array($opdId, $availableOpdIds)) {
                 $opdId = null;
             }
         }
-        
     } else {
         $opdId = $request->input('opd_id');
-        
         if (empty($opdDenganOperator)) {
             $listOpd = collect();
             $opdId = null;
         } else {
-            $listOpd = DB::table('perangkat_daerah')
-                ->whereIn('id', $opdDenganOperator)
-                ->orderBy('nama')
-                ->get();
-            
+            $listOpd = DB::table('perangkat_daerah')->whereIn('id', $opdDenganOperator)->orderBy('nama')->get();
             if ($opdId && !in_array($opdId, $opdDenganOperator)) {
                 $opdId = null;
             }
@@ -116,42 +99,28 @@ public function index(Request $request)
 
     $listTahun = $this->listTahun();
 
-    $komponenUtama = DB::table('lke_komponen')
-        ->whereNull('parent_id')
-        ->orderBy('urutan')
-        ->get();
-
-    $subKomponen = DB::table('lke_komponen')
-        ->whereNotNull('parent_id')
-        ->orderBy('parent_id')
-        ->orderBy('urutan')
-        ->get();
+    $komponenUtama = DB::table('lke_komponen')->whereNull('parent_id')->orderBy('urutan')->get();
+    $subKomponen   = DB::table('lke_komponen')->whereNotNull('parent_id')->orderBy('parent_id')->orderBy('urutan')->get();
 
     $kriteriaPerKomponen = DB::table('lke_kriteria')
-        ->orderBy('komponen_id')
-        ->orderBy('nomor')
-        ->get()
-        ->groupBy('komponen_id');
+        ->orderBy('komponen_id')->orderBy('nomor')->get()->groupBy('komponen_id');
 
+    // ── Evaluator (resmi) ──
     $nilaiPerSubKomponen = [];
     $nilaiKomponenUtama  = [];
     $nilaiSubKomponen    = collect();
-    $catatanPerKriteria  = collect();
-    $dokumenPerKriteria  = [];
     $nilaiAkhir          = 0;
     $predikat            = $this->getPredikat(0);
 
-    // ⭐ MAP PERSENTASE UNTUK KONVERSI JAWABAN KE NILAI
-    $persentaseMap = [
-        'AA' => 100,
-        'A' => 90,
-        'BB' => 80,
-        'B' => 70,
-        'CC' => 60,
-        'C' => 50,
-        'D' => 30,
-        'E' => 0
-    ];
+    // ⭐ BARU — Operator (asli/self-assessment)
+    $nilaiOperatorPerSubKomponen = [];
+    $nilaiKomponenUtamaOperator  = [];
+    $nilaiAkhirOperator          = 0;
+
+    $catatanPerKriteria = collect();
+    $dokumenPerKriteria = [];
+
+    $persentaseMap = ['AA'=>100,'A'=>90,'BB'=>80,'B'=>70,'CC'=>60,'C'=>50,'D'=>30,'E'=>0];
 
     if ($opdId) {
         $rows = DB::table('lke_penilaian')
@@ -159,7 +128,6 @@ public function index(Request $request)
             ->where('tahun', $tahun)
             ->get();
 
-        // ⭐ BANGUN MAP BOBOT SUB KOMPONEN UNTUK PERHITUNGAN CEPAT
         $bobotSubMap = [];
         foreach ($subKomponen as $s) {
             $bobotSubMap[$s->id] = floatval($s->bobot ?? 0);
@@ -167,16 +135,20 @@ public function index(Request $request)
 
         foreach ($rows as $r) {
             $komponenId = $r->komponen_id;
-            
-            // ⭐ PRIORITAS: Jika ada jawaban, hitung nilai dari jawaban × bobot
+            $bobot = $bobotSubMap[$komponenId] ?? 0;
+
+            // Evaluator (resmi)
             if (!empty($r->jawaban) && isset($persentaseMap[$r->jawaban])) {
-                $bobot = $bobotSubMap[$komponenId] ?? 0;
-                $persentase = $persentaseMap[$r->jawaban];
-                $nilaiTerhitung = ($persentase * $bobot) / 100;
-                $nilaiPerSubKomponen[$komponenId] = round($nilaiTerhitung, 2);
+                $nilaiPerSubKomponen[$komponenId] = round(($persentaseMap[$r->jawaban] * $bobot) / 100, 2);
             } else {
-                // Fallback: gunakan nilai yang tersimpan
                 $nilaiPerSubKomponen[$komponenId] = floatval($r->nilai ?? 0);
+            }
+
+            // ⭐ BARU — Operator (asli)
+            if (!empty($r->jawaban_operator) && isset($persentaseMap[$r->jawaban_operator])) {
+                $nilaiOperatorPerSubKomponen[$komponenId] = round(($persentaseMap[$r->jawaban_operator] * $bobot) / 100, 2);
+            } else {
+                $nilaiOperatorPerSubKomponen[$komponenId] = floatval($r->nilai_operator ?? 0);
             }
         }
 
@@ -184,27 +156,26 @@ public function index(Request $request)
 
         foreach ($komponenUtama as $k) {
             $total = 0;
+            $totalOperator = 0; // ⭐ BARU
             foreach ($subKomponen->where('parent_id', $k->id) as $s) {
-                $total += $nilaiPerSubKomponen[$s->id] ?? 0;
+                $total         += $nilaiPerSubKomponen[$s->id] ?? 0;
+                $totalOperator += $nilaiOperatorPerSubKomponen[$s->id] ?? 0; // ⭐ BARU
             }
-            $nilaiKomponenUtama[$k->id] = $total;
-            $nilaiAkhir += $total;
+            $nilaiKomponenUtama[$k->id]         = $total;
+            $nilaiKomponenUtamaOperator[$k->id] = $totalOperator; // ⭐ BARU
+            $nilaiAkhir         += $total;
+            $nilaiAkhirOperator += $totalOperator; // ⭐ BARU
         }
 
         $kriteriaIds = $kriteriaPerKomponen->flatten()->pluck('id');
 
         $catatanPerKriteria = DB::table('lke_penilaian_kriteria')
-            ->where('perangkat_daerah_id', $opdId)
-            ->where('tahun', $tahun)
-            ->whereIn('kriteria_id', $kriteriaIds)
-            ->get()
-            ->keyBy('kriteria_id');
+            ->where('perangkat_daerah_id', $opdId)->where('tahun', $tahun)
+            ->whereIn('kriteria_id', $kriteriaIds)->get()->keyBy('kriteria_id');
 
         $dokumenRows = DB::table('lke_dokumen_kriteria')
-            ->where('perangkat_daerah_id', $opdId)
-            ->where('tahun', $tahun)
-            ->whereIn('kriteria_id', $kriteriaIds)
-            ->get();
+            ->where('perangkat_daerah_id', $opdId)->where('tahun', $tahun)
+            ->whereIn('kriteria_id', $kriteriaIds)->get();
 
         foreach ($dokumenRows as $d) {
             $dokumenPerKriteria[$d->kriteria_id][] = $d;
@@ -218,7 +189,8 @@ public function index(Request $request)
         'komponenUtama', 'subKomponen', 'kriteriaPerKomponen',
         'nilaiPerSubKomponen', 'nilaiKomponenUtama',
         'nilaiSubKomponen', 'catatanPerKriteria', 'dokumenPerKriteria',
-        'nilaiAkhir', 'predikat'
+        'nilaiAkhir', 'predikat',
+        'nilaiOperatorPerSubKomponen', 'nilaiKomponenUtamaOperator', 'nilaiAkhirOperator' // ⭐ BARU
     ));
 }
 
@@ -230,90 +202,90 @@ public function simpan(Request $request)
     $user  = Session::get('user');
     $tahun = (int) $request->input('tahun', $this->tahunEvaluasi());
 
-    if ($user['role'] === 'operator') {
-        $opdId = $user['daerah_id'];
-    } else {
-        $opdId = $request->input('opd_id');
-    }
+    $opdId = $user['role'] === 'operator' ? $user['daerah_id'] : $request->input('opd_id');
 
     if (!$opdId) {
         return back()->with('error', 'Pilih OPD terlebih dahulu.');
     }
 
-    // ⭐ VALIDASI: Pastikan OPD memiliki user operator aktif
     $hasOperator = DB::table('pengguna')
-        ->where('role', 'operator')
-        ->where('perangkat_daerah_id', $opdId)
-        ->where('is_active', 1)
-        ->exists();
-    
+        ->where('role', 'operator')->where('perangkat_daerah_id', $opdId)
+        ->where('is_active', 1)->exists();
+
     if (!$hasOperator) {
         return back()->with('error', 'OPD ini belum memiliki user operator. Tidak dapat melakukan penilaian.');
     }
 
-    // ⭐ AMBIL JAWABAN (PREDIKAT) DARI FORM, BUKAN NILAI
-    $jawabanInput = $request->input('jawaban', []);
-    $catatanInput = $request->input('catatan_sub', []);
+    $persentaseMap = ['AA'=>100,'A'=>90,'BB'=>80,'B'=>70,'CC'=>60,'C'=>50,'D'=>30,'E'=>0];
 
-    // ⭐ KONVERSI PREDIKAT KE PERSENTASE
-    $persentaseMap = [
-        'AA' => 100,
-        'A' => 90,
-        'BB' => 80,
-        'B' => 70,
-        'CC' => 60,
-        'C' => 50,
-        'D' => 30,
-        'E' => 0
-    ];
+    // ══ OPERATOR — isi nilai_operator (lembar asli miliknya) ══
+    if ($user['role'] === 'operator') {
+        $jawabanInput = $request->input('jawaban_operator', []);
 
-    foreach ($jawabanInput as $komponenId => $jawaban) {
-        if ($jawaban === null || $jawaban === '') continue;
+        foreach ($jawabanInput as $komponenId => $jawaban) {
+            if ($jawaban === null || $jawaban === '') continue;
 
-        // Dapatkan bobot sub komponen
-        $subKomp = DB::table('lke_komponen')->where('id', $komponenId)->first();
-        $bobotSub = floatval($subKomp->bobot ?? 0);
+            $subKomp    = DB::table('lke_komponen')->where('id', $komponenId)->first();
+            $bobotSub   = floatval($subKomp->bobot ?? 0);
+            $persentase = $persentaseMap[$jawaban] ?? 0;
+            $nilai      = round(($persentase * $bobotSub) / 100, 2);
 
-        // Hitung nilai dari jawaban dan bobot
-        $persentase = $persentaseMap[$jawaban] ?? 0;
-        $nilai = ($persentase * $bobotSub) / 100;
-        $nilai = round($nilai, 2);
-        $catatan = $catatanInput[$komponenId] ?? '';
-
-        DB::table('lke_penilaian')->updateOrInsert(
-            [
-                'perangkat_daerah_id' => $opdId,
-                'tahun'               => $tahun,
-                'komponen_id'         => $komponenId,
-            ],
-            [
-                'nilai'        => $nilai,
-                'persentase'   => $persentase,
-                'jawaban'      => $jawaban,
-                'catatan'      => $catatan,
-                'dinilai_oleh' => $user['id'],
-                'updated_at'   => now(),
-                'created_at'   => now(),
-            ]
-        );
+            DB::table('lke_penilaian')->updateOrInsert(
+                ['perangkat_daerah_id' => $opdId, 'tahun' => $tahun, 'komponen_id' => $komponenId],
+                [
+                    'nilai_operator'        => $nilai,
+                    'persentase_operator'   => $persentase,
+                    'jawaban_operator'      => $jawaban,
+                    'dinilai_operator_oleh' => $user['id'],
+                    'updated_at'            => now(),
+                    'created_at'            => now(),
+                ]
+            );
+        }
     }
 
-    // ⭐ KOMENTAR ADMIN, CATATAN OPERATOR, EVIDENCE (tetap sama)
-    $komAdmin = $request->input('komentar_admin', []);
-    $catOp    = $request->input('catatan_operator', []);
+    // ══ EVALUATOR — isi nilai resmi (dipakai Rekap) ══
+    if ($user['role'] === 'evaluator') {
+        $jawabanInput = $request->input('jawaban', []);
+        $catatanInput = $request->input('catatan_sub', []);
+
+        foreach ($jawabanInput as $komponenId => $jawaban) {
+            if ($jawaban === null || $jawaban === '') continue;
+
+            $subKomp    = DB::table('lke_komponen')->where('id', $komponenId)->first();
+            $bobotSub   = floatval($subKomp->bobot ?? 0);
+            $persentase = $persentaseMap[$jawaban] ?? 0;
+            $nilai      = round(($persentase * $bobotSub) / 100, 2);
+            $catatan    = $catatanInput[$komponenId] ?? '';
+
+            DB::table('lke_penilaian')->updateOrInsert(
+                ['perangkat_daerah_id' => $opdId, 'tahun' => $tahun, 'komponen_id' => $komponenId],
+                [
+                    'nilai'        => $nilai,
+                    'persentase'   => $persentase,
+                    'jawaban'      => $jawaban,
+                    'catatan'      => $catatan,
+                    'dinilai_oleh' => $user['id'],
+                    'updated_at'   => now(),
+                    'created_at'   => now(),
+                ]
+            );
+        }
+    }
+    // Admin: tidak ada blok di sini sama sekali — admin tidak bisa menilai.
+
+    // ══ CATATAN OPERATOR / KOMENTAR EVALUATOR / EVIDENCE ══
+    $catOp   = $request->input('catatan_operator', []);
+    $komEval = $request->input('komentar_admin', []); // nama kolom DB tetap, sekarang milik evaluator
     $daftarEv = $request->input('daftar_evidence', []);
-    $ids      = array_unique(array_merge(
-        array_keys($komAdmin),
-        array_keys($catOp),
-        array_keys($daftarEv)
-    ));
+    $ids = array_unique(array_merge(array_keys($catOp), array_keys($komEval), array_keys($daftarEv)));
 
     foreach ($ids as $krId) {
         try {
             $upd = ['updated_at' => now(), 'created_at' => now()];
 
-           if ($user['role'] === 'admin' || $user['role'] === 'evaluator') {
-                $upd['komentar_admin'] = $komAdmin[$krId] ?? '';
+            if ($user['role'] === 'evaluator') {
+                $upd['komentar_admin'] = $komEval[$krId] ?? '';
             }
 
             if ($user['role'] === 'operator') {
@@ -321,42 +293,31 @@ public function simpan(Request $request)
                 $upd['daftar_evidence']  = $daftarEv[$krId] ?? '';
             }
 
-            if ($user['role'] === 'admin' && isset($daftarEv[$krId]) && $daftarEv[$krId] !== '') {
-                $upd['daftar_evidence'] = $daftarEv[$krId];
-            }
-
             DB::table('lke_penilaian_kriteria')->updateOrInsert(
-                [
-                    'kriteria_id'         => $krId,
-                    'perangkat_daerah_id' => $opdId,
-                    'tahun'               => $tahun,
-                ],
+                ['kriteria_id' => $krId, 'perangkat_daerah_id' => $opdId, 'tahun' => $tahun],
                 $upd
             );
-        } catch (\Exception $e) {
-            // Lanjut ke kriteria berikutnya jika error
-        }
+        } catch (\Exception $e) {}
     }
 
-    // Hitung total nilai
     $totalNilai = DB::table('lke_penilaian')
-        ->where('perangkat_daerah_id', $opdId)
-        ->where('tahun', $tahun)
-        ->sum('nilai');
-
+        ->where('perangkat_daerah_id', $opdId)->where('tahun', $tahun)->sum('nilai');
     $nilaiAkhir = floatval($totalNilai);
     $predikat   = $this->getPredikat($nilaiAkhir);
 
     $opd     = DB::table('perangkat_daerah')->where('id', $opdId)->first();
     $namaOpd = $opd->nama ?? 'OPD';
 
+    // ⭐ Notifikasi disesuaikan: operator submit → notif ke EVALUATOR yang di-assign (bukan admin lagi)
     if ($user['role'] === 'operator') {
-        $adminUsers = DB::table('pengguna')->where('role', 'admin')->get();
-        foreach ($adminUsers as $admin) {
+        $evaluatorIds = DB::table('evaluator_opd')->where('perangkat_daerah_id', $opdId)->pluck('evaluator_id');
+        $evaluators   = DB::table('pengguna')->whereIn('id', $evaluatorIds)->get();
+
+        foreach ($evaluators as $ev) {
             DB::table('notifikasi')->insert([
-                'user_id'    => $admin->id,
-                'judul'      => 'Input LKE AKIP',
-                'pesan'      => "Operator {$namaOpd} menginput data LKE AKIP untuk tahun {$tahun}.",
+                'user_id'    => $ev->id,
+                'judul'      => 'Operator Mengisi Nilai LKE AKIP',
+                'pesan'      => "Operator {$namaOpd} telah mengisi penilaian mandiri LKE AKIP tahun {$tahun}. Silakan tinjau dan tentukan nilai resmi.",
                 'tipe'       => 'lke_input',
                 'ikon'       => '📊',
                 'warna'      => 'indigo',
@@ -366,17 +327,13 @@ public function simpan(Request $request)
                 'updated_at' => now(),
             ]);
         }
-    } else {
-        $operator = DB::table('pengguna')
-            ->where('perangkat_daerah_id', $opdId)
-            ->where('role', 'operator')
-            ->first();
-
+    } elseif ($user['role'] === 'evaluator') {
+        $operator = DB::table('pengguna')->where('perangkat_daerah_id', $opdId)->where('role', 'operator')->first();
         if ($operator) {
             DB::table('notifikasi')->insert([
                 'user_id'    => $operator->id,
                 'judul'      => '✅ Penilaian LKE AKIP Selesai',
-                'pesan'      => "Admin telah menilai LKE AKIP {$namaOpd} tahun {$tahun}. Nilai akhir: {$nilaiAkhir} ({$predikat['kode']}).",
+                'pesan'      => "Evaluator telah menetapkan nilai resmi LKE AKIP {$namaOpd} tahun {$tahun}. Nilai akhir: {$nilaiAkhir} ({$predikat['kode']}).",
                 'tipe'       => 'lke_penilaian',
                 'ikon'       => '📊',
                 'warna'      => 'green',

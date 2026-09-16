@@ -3,6 +3,14 @@
 @section('page-title', 'Evaluasi Kinerja')
 @section('page-sub', 'Lembar Kerja Evaluasi AKIP')
 
+@php
+  $userRole    = session('user.role');
+  $isAdmin     = $userRole === 'admin';
+  $isEvaluator = $userRole === 'evaluator';
+  $isOperator  = $userRole === 'operator';
+  $defaultTab  = ($isOperator || $isEvaluator) ? 'operator' : 'evaluator';
+@endphp
+
 @section('topbar-actions')
 <div style="display:flex;gap:8px;align-items:center;">
   <a href="{{ route('evaluasi.lke.rekap') }}?tahun={{ $tahun }}"
@@ -17,7 +25,27 @@
     </svg>
     Rekap Nilai
   </a>
-  @if(session('user.role') === 'admin')
+
+  {{-- 🆕 TOMBOL TOGGLE LEMBAR KERJA --}}
+  <button type="button"
+          id="btnToggleLembar"
+          onclick="toggleLembarKerja()"
+          style="display:inline-flex;align-items:center;gap:7px;
+                 background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);
+                 padding:8px 16px;border-radius:10px;color:#6ee7b7;
+                 font-weight:600;font-size:12px;text-decoration:none;
+                 cursor:pointer;font-family:inherit;transition:all .2s;"
+          onmouseover="this.style.background='rgba(16,185,129,.25)'"
+          onmouseout="this.style.background='rgba(16,185,129,.15)'">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+    </svg>
+    <span id="btnToggleLembarLabel">
+      {{ $isOperator ? 'Lihat Lembar Verifikator' : ($isEvaluator ? 'Lihat Lembar Evaluator' : 'Lihat Lembar Operator') }}
+    </span>
+  </button>
+
+  @if($isAdmin)
   <a href="{{ route('evaluasi.lke.dokumen.list') }}?tahun={{ $tahun }}"
      style="display:inline-flex;align-items:center;gap:7px;
             background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
@@ -215,7 +243,6 @@
 .btn-lihat { background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); color:#93c5fd; font-size:10px; padding:3px 8px; border-radius:5px; }
 .btn-lihat:hover { background:rgba(59,130,246,.25); }
 
-/* ⭐ PERBAIKAN: Input Nilai lebih lebar dan jelas */
 .input-nilai {
   background: rgba(255,255,255,.08);
   border: 1px solid rgba(99,102,241,.3);
@@ -231,7 +258,6 @@
 }
 .input-nilai:focus { border-color: rgba(99,102,241,.5); }
 
-/* Style untuk dropdown predikat */
 .jawaban-select {
     width: 220px;
     padding: 8px 10px;
@@ -248,16 +274,6 @@
     padding: 10px;
 }
 
-.jawaban-select option[value="AA"] { color: #059669; font-weight: bold; }
-.jawaban-select option[value="A"] { color: #059669;  font-weight: bold; }
-.jawaban-select option[value="BB"] { color: #059669; font-weight: bold; }
-.jawaban-select option[value="B"] { color: #059669; font-weight: bold; }
-.jawaban-select option[value="CC"] { color: #059669; font-weight: bold; }
-.jawaban-select option[value="C"] { color: #059669; font-weight: bold; }
-.jawaban-select option[value="D"] { color: #059669; font-weight: bold; }
-.jawaban-select option[value="E"] { color: #059669; font-weight: bold; }
-
-/* ⭐ Nilai display untuk operator */
 .nilai-display {
   font-size: 15px;
   font-weight: 800;
@@ -278,7 +294,6 @@
 .badge-warn { background:rgba(245,158,11,.15);  border:1px solid rgba(245,158,11,.3);  color:#fbbf24; }
 .badge-dim  { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:#71717a; }
 
-/* ⭐ PERBAIKAN: Tabel lebih lebar agar tidak terpotong */
 .lke-table-wrap {
   overflow-x: auto;
   border-radius: 18px;
@@ -306,7 +321,6 @@
   white-space: nowrap;
 }
 
-/* Lebar kolom spesifik */
 .lke-table th:nth-child(1) { min-width: 50px; }
 .lke-table th:nth-child(2) { min-width: 280px; white-space: normal; }
 .lke-table th:nth-child(3) { min-width: 60px; }
@@ -325,7 +339,6 @@
   white-space: normal;
 }
 
-/* Row types */
 .row-komponen td {
   background: linear-gradient(135deg,#1e3a5f22,#2563eb18);
   border-top: 2px solid rgba(37,99,235,.4);
@@ -484,8 +497,72 @@
 @media (max-width: 768px) {
   .klaster-grid { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   TAB LEMBAR KERJA (Operator / Evaluator)
+═══════════════════════════════════════════════════════ */
+.lke-tab-bar {
+  display: flex;
+  gap: 8px;
+  margin: 22px 0 0;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--border);
+  animation: fadeUp .3s ease;
+}
+
+.lke-tab-btn {
+  padding: 11px 22px;
+  border-radius: 12px 12px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: rgba(255,255,255,.03);
+  color: var(--t3);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all .18s ease;
+  position: relative;
+  bottom: -1px;
+}
+.lke-tab-btn:hover {
+  background: rgba(255,255,255,.07);
+  color: var(--t1);
+}
+.lke-tab-btn.active {
+  background: rgba(99,102,241,.12);
+  color: #a5b4fc;
+  border-color: rgba(99,102,241,.35);
+  border-bottom: 1px solid var(--c1);
+}
+.lke-tab-btn .tab-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .7;
+}
+
+.lke-tab-panel {
+  display: none;
+  animation: fadeUp .28s ease both;
+}
+.lke-tab-panel.active {
+  display: block;
+}
+
+.btn-topbar-active {
+  background: rgba(99,102,241,.25) !important;
+  border-color: rgba(99,102,241,.5) !important;
+  color: #c7d2fe !important;
+}
 </style>
 
+{{-- ═══════════════════════════════════════════════════════
+     FILTER OPD & TAHUN
+═══════════════════════════════════════════════════════ --}}
 <div class="lke-card">
   <div class="lke-card-header">
     <div style="font-size:14px;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:8px;">
@@ -497,7 +574,7 @@
       <div style="display:grid;grid-template-columns:1fr 140px auto;gap:12px;align-items:end;">
         <div>
           <label class="dk-label">Perangkat Daerah</label>
-          @if(session('user.role') === 'admin')
+          @if($isAdmin || $isEvaluator)
             <select class="dk-select" name="opd_id" required>
               <option value="">— Pilih OPD —</option>
               @foreach($listOpd as $o)
@@ -506,16 +583,7 @@
                 </option>
               @endforeach
             </select>
-          @elseif(session('user.role') === 'evaluator')
-            <select class="dk-select" name="opd_id" required>
-              <option value="">— Pilih OPD —</option>
-              @foreach($listOpd as $o)
-                <option value="{{ $o->id }}" {{ $opdId == $o->id ? 'selected' : '' }}>
-                  {{ $o->nama }}
-                </option>
-              @endforeach
-            </select>
-            @if($listOpd->isEmpty())
+            @if($isEvaluator && $listOpd->isEmpty())
               <small style="color: #f59e0b; display: block; margin-top: 6px;">
                 ⚠️ Belum ada OPD yang diassign. Hubungi admin.
               </small>
@@ -550,7 +618,6 @@
 @else
 
 @php
-  $isAdmin  = session('user.role') === 'admin';
   $namaOpd  = $listOpd->firstWhere('id', $opdId)?->nama ?? session('user.nama_daerah') ?? '';
   $warnaMap = [
     'AA'=>'#059669','A'=>'#2563eb','BB'=>'#7c3aed','B'=>'#d4982e',
@@ -558,17 +625,17 @@
   ];
 @endphp
 
-@if($isAdmin)
-<div class="dk-alert warn">
-  <span>✏️ Pilih <strong>Jawaban (Predikat)</strong> untuk setiap sub-komponen. Nilai akan terisi otomatis berdasarkan bobot.</span>
-</div>
-@elseif(session('user.role') === 'evaluator')
+@if($isOperator)
 <div class="dk-alert info">
-  <span>📊 Anda sebagai <strong>Evaluator</strong> dapat memilih predikat jawaban untuk penilaian LKE AKIP.</span>
+  <span>📝 Ini adalah <strong>lembar kerja Anda sendiri</strong>. Isi Jawaban (Predikat), Catatan, Evidence, dan upload dokumen pendukung. Nilai ini akan direview oleh Evaluator untuk ditetapkan sebagai nilai resmi.</span>
+</div>
+@elseif($isEvaluator)
+<div class="dk-alert info">
+  <span>📊 Anda sebagai <strong>Evaluator</strong> mengisi nilai resmi. Gunakan tombol di atas untuk berpindah antara lembar Operator dan lembar Evaluator.</span>
 </div>
 @else
-<div class="dk-alert info">
-  <span>📝 Anda sebagai <strong>Operator</strong> dapat mengisi Catatan, Daftar Evidence, dan mengupload dokumen pendukung. Penilaian dilakukan oleh Evaluator.</span>
+<div class="dk-alert warn">
+  <span>👁️ Anda sebagai <strong>Admin</strong> hanya dapat <strong>melihat</strong> kedua lembar kerja di bawah — tidak dapat mengubah nilai.</span>
 </div>
 @endif
 
@@ -577,280 +644,32 @@
   <input type="hidden" name="tahun"  value="{{ $tahun }}">
   <input type="hidden" name="opd_id" value="{{ $opdId }}">
 
-  <div class="lke-table-wrap">
-    <table class="lke-table">
-      <thead>
-        <tr>
-          <th style="width:44px;">No</th>
-          <th style="text-align:left;min-width:260px;">Komponen / Sub / Kriteria</th>
-          <th style="width:68px;">Bobot</th>
-          <th style="width:110px;">Nilai</th>
-          <th style="width:240px;">Jawaban (Predikat)</th>
-          <th style="width:160px;">Catatan</th>
-          <th style="width:160px;">Komentar Evaluator</th>
-          <th style="width:200px;">Evidence &amp; Dokumen</th>
-        </tr>
-      </thead>
-      <tbody>
+  {{-- ═══════════════════════════════════════════════════ --}}
+  {{-- PANEL 1: LEMBAR EVALUATOR                          --}}
+  {{-- ═══════════════════════════════════════════════════ --}}
+  <div class="lke-tab-panel {{ $defaultTab === 'evaluator' ? 'active' : '' }}" id="panelEvaluator">
+    @include('lke.partials.tabel-nilai', [
+        'mode'                => 'evaluator',
+        'editable'            => $isEvaluator,
+        'judulLembar'         => 'Lembar Kerja Evaluator (Nilai Resmi — dipakai di Rekap)',
+        'nilaiPerSubX'        => $nilaiPerSubKomponen,
+        'nilaiKomponenUtamaX' => $nilaiKomponenUtama,
+        'nilaiAkhirX'         => $nilaiAkhir,
+    ])
+  </div>
 
-      @foreach($komponenUtama as $k)
-      @php $nilaiK = $nilaiKomponenUtama[$k->id] ?? 0; @endphp
-
-      <tr class="row-komponen">
-        <td style="text-align:center;">
-          <span style="font-size:16px;font-weight:800;color:#93c5fd;">{{ $k->urutan }}</span>
-        </td>
-        <td>
-          <div style="font-size:14px;font-weight:800;color:var(--t1);">{{ $k->nama }}</div>
-          <div style="font-size:10px;color:#93c5fd;margin-top:3px;">Kode: {{ $k->kode }}</div>
-        <td>
-        <td style="text-align:center;">
-          <span style="font-size:15px;font-weight:800;color:#93c5fd;">{{ $k->bobot }}</span>
-        </td>
-        <td style="text-align:center;">
-          <span id="total_komponen_{{ $k->id }}"
-                style="font-size:18px;font-weight:900;color:#60a5fa;">
-            {{ number_format($nilaiK, 2) }}
-          </span>
-        </td>
-        <td colspan="4" style="color:rgba(255,255,255,.25);text-align:center;font-size:11px;">—</td>
-      </tr>
-
-      @foreach($subKomponen->where('parent_id', $k->id) as $s)
-      @php
-        $penSub    = $nilaiSubKomponen[$s->id] ?? null;
-        $nilaiS    = $nilaiPerSubKomponen[$s->id] ?? 0;
-        $krList    = $kriteriaPerKomponen[$s->id] ?? collect();
-        $jawabanS  = $penSub?->jawaban ?? '';
-        $warnaJwb  = $jawabanS ? ($warnaMap[$jawabanS] ?? '#71717a') : '#71717a';
-        $subKode   = preg_replace('/[^a-zA-Z]/', '', $s->kode);
-      @endphp
-
-      <tr class="row-sub">
-        <td style="text-align:center;">
-          <div class="sub-nomor">{{ $k->urutan }}{{ $subKode }}</div>
-        </td>
-        <td>
-          <div style="font-size:13px;font-weight:700;color:var(--t1);">{{ $s->nama }}</div>
-          <div style="font-size:10px;color:var(--t3);margin-top:3px;">{{ $krList->count() }} kriteria</div>
-        </td>
-        <td style="text-align:center;font-weight:700;color:#a5b4fc;">{{ $s->bobot }}</td>
-
-        {{-- NILAI (Readonly, otomatis terisi, TAMPAK JELAS) --}}
-        <td style="text-align:center;">
-          @if($isAdmin || session('user.role') === 'evaluator')
-            <input type="number"
-                   name="nilai[{{ $s->id }}]"
-                   id="nilai_{{ $s->id }}"
-                   value="{{ $nilaiS > 0 ? number_format($nilaiS, 2) : '' }}"
-                   step="0.01"
-                   min="0"
-                   max="{{ $s->bobot }}"
-                   class="input-nilai"
-                   data-komponen="{{ $k->id }}"
-                   data-bobot="{{ $s->bobot }}"
-                   readonly
-                   style="background: rgba(255,255,255,.08); text-align: center; font-weight: 800; font-size: 14px; width: 90px; color: #34d399;">
-            <div style="font-size: 10px; color: #6ee7b7; margin-top: 3px;">
-              Max: {{ $s->bobot }}
-            </div>
-          @else
-            @if($nilaiS > 0)
-              <div class="nilai-display">{{ number_format($nilaiS, 2) }}</div>
-            @else
-              <span class="nilai-dim">Belum Dinilai</span>
-            @endif
-            <input type="hidden" name="nilai[{{ $s->id }}]" value="{{ $nilaiS }}">
-          @endif
-        </td>
-
-        {{-- JAWABAN (Dropdown Predikat) --}}
-        <td style="text-align:center;">
-          @if($isAdmin || session('user.role') === 'evaluator')
-            <select name="jawaban[{{ $s->id }}]"
-                    class="jawaban-select"
-                    data-sub="{{ $s->id }}"
-                    data-komponen="{{ $k->id }}"
-                    data-bobot="{{ $s->bobot }}"
-                    style="width: 220px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,.06); color: #fff; border: 1px solid rgba(255,255,255,.12); font-size: 12px;"
-                    onchange="updateNilaiDariJawaban(this)">
-              <option value="">-- Pilih Predikat --</option>
-              <option value="AA" {{ $jawabanS == 'AA' ? 'selected' : '' }}>AA </option>
-              <option value="A" {{ $jawabanS == 'A' ? 'selected' : ''   }}>A </option>
-              <option value="BB" {{ $jawabanS == 'BB' ? 'selected' : '' }}>BB </option>
-              <option value="B" {{ $jawabanS == 'B' ? 'selected' : ''   }}>B </option>
-              <option value="CC" {{ $jawabanS == 'CC' ? 'selected' : '' }}>CC </option>
-              <option value="C" {{ $jawabanS == 'C' ? 'selected' : ''   }}>C </option>
-              <option value="D" {{ $jawabanS == 'D' ? 'selected' : ''   }}>D </option>
-              <option value="E" {{ $jawabanS == 'E' ? 'selected' : ''   }}>E </option>
-            </select>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
-              Bobot: {{ $s->bobot }}
-            </div>
-          @else
-            <span style="font-size:14px;font-weight:800;color:{{ $warnaJwb }};">
-              {{ $jawabanS ?: '—' }}
-            </span>
-            <input type="hidden" name="jawaban[{{ $s->id }}]" value="{{ $jawabanS }}">
-          @endif
-        </td>
-
-        {{-- CATATAN SUB --}}
-        <td>
-          @if($isAdmin)
-            <textarea name="catatan_sub[{{ $s->id }}]" rows="2" class="dk-textarea"
-                      placeholder="Catatan evaluasi...">{{ $penSub?->catatan ?? '' }}</textarea>
-          @else
-            @if($penSub?->catatan)
-              <div class="catatan-admin">📝 {{ $penSub->catatan }}</div>
-            @else
-              <span style="font-size:11px;color:var(--t4);font-style:italic;">—</span>
-            @endif
-          @endif
-        </td>
-
-        <td style="text-align:center;font-size:10px;color:var(--t4);">(per kriteria)</td>
-        <td style="text-align:center;font-size:10px;color:var(--t4);">(per kriteria)</td>
-      </tr>
-
-      @foreach($krList as $krIdx => $kr)
-      @php
-        $cat  = $catatanPerKriteria[$kr->id] ?? null;
-        $docs = $dokumenPerKriteria[$kr->id] ?? [];
-      @endphp
-
-      <tr class="row-kriteria">
-        <td style="text-align:center;vertical-align:top;padding-top:13px;">
-          <div class="kr-nomor">{{ $kr->nomor }}</div>
-        </td>
-        <td style="vertical-align:top;">
-          <div style="font-size:12px;color:var(--t2);line-height:1.55;">{{ $kr->uraian }}</div>
-        </td>
-        <td colspan="3" style="text-align:center;color:var(--t4);font-size:11px;">—</td>
-
-        <td style="vertical-align:top;">
-          @if(!$isAdmin)
-            <textarea name="catatan_operator[{{ $kr->id }}]" rows="2" class="dk-textarea"
-                      placeholder="Catatan unit/OPD...">{{ $cat?->catatan_operator ?? '' }}</textarea>
-          @else
-            @if($cat?->catatan_operator)
-              <div class="catatan-opd">{{ $cat->catatan_operator }}</div>
-            @else
-              <span style="font-size:11px;color:var(--t4);font-style:italic;">—</span>
-            @endif
-          @endif
-        </td>
-
-        <td style="vertical-align:top;">
-         @if($isAdmin || session('user.role') === 'evaluator')
-         <textarea name="komentar_admin[{{ $kr->id }}]" rows="2" class="dk-textarea"
-            placeholder="Komentar evaluator...">{{ $cat?->komentar_admin ?? '' }}</textarea>
-          @else
-            @if($cat?->komentar_admin)
-              <div class="catatan-admin">💬 {{ $cat->komentar_admin }}</div>
-            @else
-              <span style="font-size:11px;color:var(--t4);font-style:italic;">Belum ada komentar</span>
-            @endif
-          @endif
-        </td>
-
-               <td style="vertical-align:top;">
-          <div id="evidence_{{ $kr->id }}_display" style="{{ $cat?->daftar_evidence ? '' : 'display:none;' }}">
-            <div style="font-size:11px;line-height:1.6;color:var(--t2);background:rgba(255,255,255,.03);
-                        border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 10px;
-                        margin-bottom:6px;white-space:pre-line;">
-              {!! \App\Helpers\TextHelper::linkify($cat->daftar_evidence ?? '') !!}
-            </div>
-            <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 8px;margin-bottom:6px;"
-                    onclick="toggleEvidenceEdit({{ $kr->id }})">
-              ✏️ Edit
-            </button>
-          </div>
-
-          <div id="evidence_{{ $kr->id }}_edit" style="{{ $cat?->daftar_evidence ? 'display:none;' : '' }}">
-            <textarea name="daftar_evidence[{{ $kr->id }}]"
-                      rows="2" class="dk-textarea" style="margin-bottom:6px;"
-                      placeholder="- RPJMD 2021-2026&#10;- Renstra Dinas">{{ $cat?->daftar_evidence ?? '' }}</textarea>
-          </div>
-
-          @if(!$isAdmin)
-          <div class="upload-row">
-            <input type="file" id="file_kr_{{ $kr->id }}"
-                   accept=".pdf,.docx,.xlsx,.doc,.xls,.jpg,.jpeg,.png">
-            <button type="button" class="btn btn-upload"
-                    onclick="ajaxUpload({{ $kr->id }}, {{ $tahun }}, {{ $opdId }}, this)">
-              📤
-            </button>
-          </div>
-          @endif
-
-          <div id="docs_kr_{{ $kr->id }}">
-            @if(count($docs) > 0)
-              @foreach($docs as $doc)
-              <div class="doc-item" id="doc_item_{{ $doc->id }}">
-                <span style="font-size:12px;">📄</span>
-                <span class="doc-name" title="{{ $doc->nama_file }}">{{ $doc->nama_file }}</span>
-                <a href="{{ route('evaluasi.lke.lihat.dokumen', $doc->id) }}"
-                   target="_blank" class="btn btn-lihat">👁</a>
-                @if(!$isAdmin)
-                <button type="button" class="btn btn-del"
-                        onclick="ajaxHapus({{ $doc->id }}, this)">🗑</button>
-                @endif
-              </div>
-              @endforeach
-            @else
-              <div id="no_doc_{{ $kr->id }}"
-                   style="padding:5px 8px;font-size:10.5px;color:var(--t4);font-style:italic;
-                          background:rgba(255,255,255,.02);border-radius:6px;margin-top:5px;text-align:center;">
-                Belum ada dokumen
-              </div>
-            @endif
-          </div>
-        </td>
-      </tr>
-      @endforeach
-      <tr class="row-total">
-        <td colspan="3" style="text-align:right;padding-right:16px;">
-          Total — {{ $k->nama }}
-        </td>
-        <td style="text-align:center;">
-          <span id="total_bawah_{{ $k->id }}"
-                style="font-size:18px;font-weight:900;">
-            {{ number_format($nilaiKomponenUtama[$k->id] ?? 0, 2) }}
-          </span>
-        </td>
-        <td colspan="4" style="color:var(--t4);">—</td>
-      </tr>
-      <tr class="row-spacer"><td colspan="8"></td></tr>
-
-      @endforeach
-      @endforeach
-
-      <tr class="row-grand">
-        <td colspan="3" style="text-align:right;padding-right:16px;
-                                font-size:14px;font-weight:800;color:var(--t1);">
-          NILAI AKHIR LKE AKIP
-        </td>
-        <td style="text-align:center;">
-          <span id="total_akhir"
-                style="font-size:26px;font-weight:900;color:#fff;">
-            {{ number_format($nilaiAkhir, 2) }}
-          </span>
-        </td>
-        <td colspan="4" style="text-align:center;">
-          @if($nilaiAkhir > 0)
-          <span id="predikat_badge"
-                style="font-size:15px;font-weight:800;
-                       background:{{ $predikat['color'] }};
-                       padding:6px 18px;border-radius:40px;display:inline-block;color:#fff;">
-            {{ $predikat['kode'] }} — {{ $predikat['label'] }}
-          </span>
-          @endif
-        </td>
-      </tr>
-
-      </tbody>
-    </table>
+  {{-- ═══════════════════════════════════════════════════ --}}
+  {{-- PANEL 2: LEMBAR OPERATOR                           --}}
+  {{-- ═══════════════════════════════════════════════════ --}}
+  <div class="lke-tab-panel {{ $defaultTab === 'operator' ? 'active' : '' }}" id="panelOperator">
+    @include('lke.partials.tabel-nilai', [
+        'mode'                => 'operator',
+        'editable'            => $isOperator,
+        'judulLembar'         => 'Lembar Kerja Operator (Nilai Asli)',
+        'nilaiPerSubX'        => $nilaiOperatorPerSubKomponen,
+        'nilaiKomponenUtamaX' => $nilaiKomponenUtamaOperator,
+        'nilaiAkhirX'         => $nilaiAkhirOperator,
+    ])
   </div>
 
   <div class="sticky-footer">
@@ -859,26 +678,20 @@
       &nbsp;·&nbsp; Tahun <strong style="color:var(--t1);">{{ $tahun }}</strong>
       @if($nilaiAkhir > 0)
       &nbsp;·&nbsp;
-      <span id="footer_nilai"
-            style="font-weight:700;color:{{ $predikat['color'] }};">
-        Nilai: {{ number_format($nilaiAkhir,2) }} ({{ $predikat['kode'] }})
+      <span id="footer_nilai" style="font-weight:700;color:{{ $predikat['color'] ?? '#a1a1aa' }};">
+        Nilai Resmi: {{ number_format($nilaiAkhir,2) }} ({{ $predikat['kode'] ?? '-' }})
       </span>
       @endif
     </div>
     <div style="display:flex;gap:10px;">
-      <a href="{{ route('evaluasi.lke.rekap') }}?tahun={{ $tahun }}" class="btn btn-ghost">
-        📊 Rekap
-      </a>
-      <button type="submit" form="formLke" class="btn btn-ok"
-              style="padding:10px 22px;font-size:13px;">
-        💾 Simpan
-      </button>
+      <a href="{{ route('evaluasi.lke.rekap') }}?tahun={{ $tahun }}" class="btn btn-ghost">📊 Rekap</a>
+      @if($isOperator || $isEvaluator)
+      <button type="submit" form="formLke" class="btn btn-ok" style="padding:10px 22px;font-size:13px;">💾 Simpan</button>
+      @endif
     </div>
   </div>
-
 </form>
 @endif
-
 @endsection
 
 @section('scripts')
@@ -887,6 +700,74 @@ var CSRF_TOKEN     = '{{ csrf_token() }}';
 var ROUTE_UPLOAD   = '{{ route("evaluasi.lke.upload.dokumen") }}';
 var ROUTE_LIHAT_B  = '{{ url("evaluasi/lke/dokumen") }}';
 var ROUTE_HAPUS_B  = '{{ url("evaluasi/lke/dokumen") }}';
+var USER_ROLE      = '{{ $userRole }}';
+var DEFAULT_TAB    = '{{ $defaultTab }}';
+var STORAGE_KEY    = 'lkeActiveTab_' + USER_ROLE; // per-role biar gak bentrok
+
+/* ══════════════════════════════════════════════════════════
+   TAB SWITCHER — Lembar Operator / Lembar Evaluator
+══════════════════════════════════════════════════════════ */
+function switchLkeTab(mode) {
+  var panelEval = document.getElementById('panelEvaluator');
+  var panelOp   = document.getElementById('panelOperator');
+  var btnEval   = document.getElementById('tabBtnEvaluator');
+  var btnOp     = document.getElementById('tabBtnOperator');
+  var toggleLbl = document.getElementById('btnToggleLembarLabel');
+
+  if (!panelEval || !panelOp) return;
+
+  if (mode === 'operator') {
+    panelEval.classList.remove('active');
+    panelOp.classList.add('active');
+    if (btnEval) btnEval.classList.remove('active');
+    if (btnOp)   btnOp.classList.add('active');
+if (toggleLbl) {
+  toggleLbl.textContent = (USER_ROLE === 'operator')
+    ? 'Lihat Lembar Verifikator'
+    : 'Lihat Lembar Evaluator';
+}
+  } else {
+    panelEval.classList.add('active');
+    panelOp.classList.remove('active');
+    if (btnEval) btnEval.classList.add('active');
+    if (btnOp)   btnOp.classList.remove('active');
+    if (toggleLbl) toggleLbl.textContent = 'Lihat Lembar Evaluator';
+  }
+
+  // simpan preferensi di localStorage (per-role)
+  try { localStorage.setItem(STORAGE_KEY, mode); } catch(e) {}
+
+  // scroll ke atas tabel biar nyaman
+  var tabBar = document.querySelector('.lke-tab-bar');
+  if (tabBar) {
+    var y = tabBar.getBoundingClientRect().top + window.pageYOffset - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+
+  // re-grow textarea di panel yang baru aktif (hidden panel punya scrollHeight = 0)
+  setTimeout(function() {
+    var activePanel = document.querySelector('.lke-tab-panel.active');
+    if (activePanel) {
+      activePanel.querySelectorAll('.dk-textarea').forEach(function(el) {
+        autoGrow(el);
+      });
+    }
+  }, 50);
+} // ⚠️ INI YANG HILANG — kurung penutup fungsi switchLkeTab
+
+/* Toggle cepat dari tombol topbar */
+function toggleLembarKerja() {
+  var panelOp = document.getElementById('panelOperator');
+  if (!panelOp) return;
+  var isOperatorActive = panelOp.classList.contains('active');
+  switchLkeTab(isOperatorActive ? 'evaluator' : 'operator');
+}
+function toggleLembarKerja() {
+  var panelOp = document.getElementById('panelOperator');
+  if (!panelOp) return;
+  var isOperatorActive = panelOp.classList.contains('active');
+  switchLkeTab(isOperatorActive ? 'evaluator' : 'operator');
+}
 
 /* ── AJAX Upload ──────────────────────────────── */
 function ajaxUpload(kriteriaId, tahun, opdId, btn) {
@@ -961,6 +842,7 @@ function toggleEvidenceEdit(krId) {
   ta.focus();
   autoGrow(ta);
 }
+
 /* ── Auto-resize textarea ─────────────────────── */
 function autoGrow(el) {
   el.style.height = 'auto';
@@ -968,20 +850,18 @@ function autoGrow(el) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Set tinggi awal sesuai isi yang sudah ada (termasuk data lama)
   document.querySelectorAll('.dk-textarea').forEach(function (el) {
     autoGrow(el);
   });
 });
 
-// Auto-resize setiap kali user mengetik, termasuk textarea yang baru
-// dimunculkan lewat tombol Edit (event delegation, bukan per-elemen)
 document.addEventListener('input', function (e) {
   if (e.target.classList.contains('dk-textarea')) {
     autoGrow(e.target);
   }
 });
 
+/* ── Hitung Nilai dari Jawaban ────────────────── */
 function getPersentaseDariJawaban(jawaban) {
   const mapping = { 'AA': 100, 'A': 90, 'BB': 80, 'B': 70, 'CC': 60, 'C': 50, 'D': 30, 'E': 0 };
   return mapping[jawaban] || 0;
@@ -992,25 +872,32 @@ function hitungNilai(persentase, bobot) {
 }
 
 function updateNilaiDariJawaban(selectElement) {
+  var prefix = selectElement.dataset.prefix;
   var jawaban = selectElement.value;
   var subId = selectElement.dataset.sub;
   var bobot = parseFloat(selectElement.dataset.bobot) || 0;
-  var nilaiInput = document.getElementById('nilai_' + subId);
-  
+  var nilaiInput = document.getElementById(prefix + '_nilai_' + subId);
+
   if (!nilaiInput) return;
-  
+
   if (jawaban) {
     var persentase = getPersentaseDariJawaban(jawaban);
-    var nilai = hitungNilai(persentase, bobot);
-    nilai = Math.round(nilai * 100) / 100;
+    var nilai = Math.round(((persentase * bobot) / 100) * 100) / 100;
     nilaiInput.value = nilai;
   } else {
     nilaiInput.value = '';
   }
-  
-  updateAllTotals();
+
+  updateAllTotals(prefix);
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('select[data-prefix]').forEach(function(select) {
+    select.addEventListener('change', function() { updateNilaiDariJawaban(this); });
+  });
+});
+
+/* ── Predikat ─────────────────────────────────── */
 function getPredikat(n) {
   if (n >= 90) return { kode:'AA', label:'Sangat Memuaskan', color:'#059669' };
   if (n >= 80) return { kode:'A',  label:'Memuaskan',        color:'#2563eb' };
@@ -1022,37 +909,43 @@ function getPredikat(n) {
   return              { kode:'E',  label:'Tidak Ada Upaya',  color:'#6b7280' };
 }
 
-function updateAllTotals() {
+function updateAllTotals(prefix) {
+  if (!prefix) {
+    // panggil untuk dua prefix
+    updateAllTotals('operator');
+    updateAllTotals('evaluator');
+    return;
+  }
+
   var komMap = {}, total = 0;
 
-  document.querySelectorAll('input[name^="nilai["]').forEach(function(inp) {
-    var m = inp.getAttribute('name').match(/\[(\d+)\]/);
+  document.querySelectorAll('input[id^="' + prefix + '_nilai_"]').forEach(function(inp) {
+    var m = inp.id.match(/_nilai_(\d+)/);
     if (!m) return;
     var v = parseFloat(inp.value) || 0;
-    var k = inp.dataset.komponen || '0';
+    var selectEl = document.getElementById(prefix + '_jawaban_' + m[1]);
+    var k = selectEl ? selectEl.dataset.komponen : '0';
     komMap[k] = (komMap[k] || 0) + v;
     total += v;
   });
 
   Object.keys(komMap).forEach(function(k) {
-    var eh = document.getElementById('total_komponen_' + k);
+    var eh = document.getElementById(prefix + '_total_komponen_' + k);
     if (eh) eh.textContent = komMap[k].toFixed(2);
-    var eb = document.getElementById('total_bawah_' + k);
+    var eb = document.getElementById(prefix + '_total_bawah_' + k);
     if (eb) eb.textContent = komMap[k].toFixed(2);
   });
 
-  var ea = document.getElementById('total_akhir');
+  var ea = document.getElementById(prefix + '_total_akhir');
   if (ea) ea.textContent = total.toFixed(2);
 
-  var ef = document.getElementById('footer_nilai');
-  if (ef) ef.textContent = 'Nilai: ' + total.toFixed(2);
-
-  var eb2 = document.getElementById('predikat_badge');
-  if (eb2) {
-    var p = getPredikat(total);
-    eb2.style.background = p.color;
-    eb2.textContent = p.kode + ' — ' + p.label;
-    if (ef) ef.style.color = p.color;
+  if (prefix === 'evaluator') {
+    var ef = document.getElementById('footer_nilai');
+    if (ef) {
+      var p = getPredikat(total);
+      ef.textContent = 'Nilai Resmi: ' + total.toFixed(2) + ' (' + p.kode + ')';
+      ef.style.color = p.color;
+    }
   }
 }
 
@@ -1063,6 +956,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   updateAllTotals();
+});
+
+/* ── Set tab default sesuai role saat halaman dibuka ── */
+document.addEventListener('DOMContentLoaded', function() {
+  var saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+
+  // pakai saved kalau valid, kalau tidak pakai default role
+  if (saved === 'operator' || saved === 'evaluator') {
+    switchLkeTab(saved);
+  } else {
+    switchLkeTab(DEFAULT_TAB);
+  }
 });
 </script>
 @endsection

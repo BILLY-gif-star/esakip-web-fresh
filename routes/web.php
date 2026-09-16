@@ -22,6 +22,7 @@ use App\Http\Controllers\DokumenHasilController;
 use App\Http\Controllers\PerjanjianCascadingController;
 use App\Http\Controllers\PerjanjianTemplateController;
 use App\Http\Controllers\PerjanjianDokumenController;
+use App\Http\Controllers\LheAkipController;
 
 
 Route::get('/debug-env', function () {
@@ -99,6 +100,21 @@ Route::middleware('auth.esakip')->group(function () {
     Route::middleware('role.admin')->group(function () {
         Route::get('/rekapan-hasil',                [RekapanHasilLkeController::class, 'index'])->name('rekapan.hasil');
         Route::get('/rekapan-hasil/download-excel', [RekapanHasilLkeController::class, 'downloadExcel'])->name('rekapan.hasil.excel');
+    });
+
+
+    // ════════════════════════════════════════════════════════
+    //  LHE AKIP (admin only)               ← TEMPEL DI SINI
+    // ════════════════════════════════════════════════════════
+    Route::middleware('role.admin')->prefix('lhe-akip')->name('lhe-akip.')->group(function () {
+        Route::get('/',              [LheAkipController::class, 'index'])->name('index');
+        Route::get('/create',        [LheAkipController::class, 'create'])->name('create');
+        Route::get('/nilai-preview', [LheAkipController::class, 'nilaiPreview'])->name('nilai-preview');
+        Route::post('/',             [LheAkipController::class, 'store'])->name('store');
+        Route::get('/{lhe}/edit',    [LheAkipController::class, 'edit'])->name('edit');
+        Route::get('/{lhe}/cetak',   [LheAkipController::class, 'cetak'])->name('cetak');
+        Route::put('/{lhe}',         [LheAkipController::class, 'update'])->name('update');
+        Route::delete('/{lhe}',      [LheAkipController::class, 'destroy'])->name('destroy');
     });
 
     // ════════════════════════════════════════════════════════
@@ -256,7 +272,6 @@ Route::middleware('auth.esakip')->group(function () {
     // ════════════════════════════════════════════════════════
     Route::middleware('role.admin')->prefix('admin')->name('admin.')->group(function () {
 
-
          Route::get('/landing', [LandingController::class, 'admin'])->name('landing');
          Route::post('/landing/{key}', [LandingController::class, 'update'])->name('landing.update');
          Route::post('/landing/{key}/reset', [LandingController::class, 'reset'])->name('landing.reset');
@@ -295,4 +310,6 @@ Route::middleware('auth.esakip')->group(function () {
         Route::get('/evaluator/{id}/assigned-opd', [AdminController::class, 'getAssignedOpdEvaluator'])->name('evaluator.assigned-opd');
     });
 
-}); // end middleware auth.esakip
+    
+
+}); 
