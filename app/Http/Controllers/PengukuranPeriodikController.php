@@ -7,6 +7,11 @@ use App\Models\PengukuranPeriodik;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class PengukuranPeriodikController extends Controller
 {
@@ -501,6 +506,171 @@ class PengukuranPeriodikController extends Controller
         return back()->with('success', 'Data berhasil dihapus.');
     }
 
+
+        // ════════════════════════════════════════════════════
+    //  EXPORT EXCEL
+    // ════════════════════════════════════════════════════
+    public function exportExcel(Request $request)
+    {
+        $user  = Session::get('user');
+        $tahun = (int) $request->input('tahun', date('Y'));
+
+        $opdId = $user['role'] === 'operator' ? $user['daerah_id'] : $request->input('opd_id');
+
+        if (!$opdId) {
+            return back()->with('error', 'Pilih OPD terlebih dahulu sebelum mengunduh.');
+        }
+
+        $opd     = DB::table('perangkat_daerah')->where('id', $opdId)->first();
+        $namaOpd = $opd->nama ?? 'OPD';
+
+        $rawData = DB::table('pengukuran_periodik')
+            ->where('perangkat_daerah_id', $opdId)
+            ->where('tahun', $tahun)
+            ->orderBy('sasaran_strategis')
+            ->orderBy('indikator')
+            ->orderBy('id')
+            ->get()
+            ->unique(function ($item) {
+                return $item->sasaran_strategis . '|||' . $item->indikator;
+            })
+            ->values();
+
+        $data = $rawData->groupBy('sasaran_strategis');
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Pengukuran Periodik');
+
+        $judul = 'MINIMAL PENGUKURAN KINERJA PERIODIK';
+        $sheet->setCellValue('A1', $judul);
+        $sheet->mergeCells('A1:AC1');
+        $sheet->setCellValue('A2', strtoupper($namaOpd) . ' — TAHUN ' . $tahun);
+        $sheet->mergeCells('A2:AC2');
+        $sheet->getStyle('A1:A2')->getFont()->setBold(true)->setSize(13);
+        $sheet->getStyle('A1:A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $headerRow1 = 4;
+        $headerRow2 = 5;
+
+        $groupHeaders = [
+            'Target Kinerja'           => 4,
+            'Target Program/Kegiatan'  => 4,
+            'Anggaran'                 => 4,
+            'Capaian Kinerja'          => 4,
+            'Capaian Program/Kegiatan' => 4,
+            'Capaian Anggaran'         => 4,
+        ];
+
+        $col = 1;
+        $fixedCols = ['No', 'Sasaran Strategis', '#', 'Indikator Kinerja'];
+        foreach ($fixedCols as $fc) {
+            $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+            $sheet->setCellValue($letter . $headerRow1, $fc);
+            $sheet->mergeCells($letter . $headerRow1 . ':' . $letter . $headerRow2);
+            $col++;
+        }
+
+        $twLabels = ['TW1', 'TW2', 'TW3', 'TW4'];
+
+        foreach ($groupHeaders as $label => $jmlTw) {
+            $startCol = $col;
+            foreach ($twLabels as $tw) {
+                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+                $sheet->setCellValue($letter . $headerRow2, $tw);
+                $col++;
+            }
+            $endCol = $col - 1;
+            $startLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($startCol);
+            $endLetter   = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($endCol);
+            $sheet->setCellValue($startLetter . $headerRow1, $label);
+            $sheet->mergeCells($startLetter . $headerRow1 . ':' . $endLetter . $headerRow1);
+
+            if ($label === 'Target Kinerja') {
+                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+                $sheet->setCellValue($letter . $headerRow1, 'Sasaran Program/Kegiatan');
+                $sheet->mergeCells($letter . $headerRow1 . ':' . $letter . $headerRow2);
+                $col++;
+            }
+            if ($label === 'Target Program/Kegiatan') {
+                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+                $sheet->setCellValue($letter . $headerRow1, 'Penanggung Jawab');
+                $sheet->mergeCells($letter . $headerRow1 . ':' . $letter . $headerRow2);
+                $col++;
+            }
+        }
+
+        $letterAksi = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+        $sheet->setCellValue($letterAksi . $headerRow1, 'Keterangan');
+        $sheet->mergeCells($letterAksi . $headerRow1 . ':' . $letterAksi . $headerRow2);
+        $lastCol = $letterAksi;
+
+        $sheet->getStyle('A' . $headerRow1 . ':' . $lastCol . $headerRow2)
+            ->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A' . $headerRow1 . ':' . $lastCol . $headerRow2)
+            ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('1F3864');
+        $sheet->getStyle('A' . $headerRow1 . ':' . $lastCol . $headerRow2)
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+
+        $row = $headerRow2 + 1;
+        $no  = 1;
+
+        foreach ($data as $sasaran => $indikators) {
+            $jumlahInd = $indikators->count();
+
+            foreach ($indikators as $idx => $item) {
+                $c = 1;
+                $set = function ($val) use ($sheet, &$c, $row) {
+                    $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                    $sheet->setCellValue($letter . $row, $val);
+                    $c++;
+                };
+
+                if ($idx === 0) {
+                    $sheet->setCellValue('A' . $row, $no);
+                    $sheet->setCellValue('B' . $row, $sasaran ?: 'Tanpa Sasaran Strategis');
+                    if ($jumlahInd > 1) {
+                        $sheet->mergeCells('A' . $row . ':A' . ($row + $jumlahInd - 1));
+                        $sheet->mergeCells('B' . $row . ':B' . ($row + $jumlahInd - 1));
+                    }
+                }
+                $c = 3;
+                $set($idx + 1);
+                $set($item->indikator ?? '-');
+                foreach (['target_kinerja_tw1','target_kinerja_tw2','target_kinerja_tw3','target_kinerja_tw4'] as $f) $set($item->$f ?? '');
+                $set($item->sasaran_program ?? '-');
+                foreach (['target_program_tw1','target_program_tw2','target_program_tw3','target_program_tw4'] as $f) $set($item->$f ?? '');
+                $set($item->penanggung_jawab ?? '-');
+                foreach (['anggaran_tw1','anggaran_tw2','anggaran_tw3','anggaran_tw4'] as $f) $set($item->$f ?? 0);
+                foreach (['capaian_kinerja_tw1','capaian_kinerja_tw2','capaian_kinerja_tw3','capaian_kinerja_tw4'] as $f) $set($item->$f ?? '');
+                foreach (['capaian_program_tw1','capaian_program_tw2','capaian_program_tw3','capaian_program_tw4'] as $f) $set($item->$f ?? '');
+                foreach (['capaian_anggaran_tw1','capaian_anggaran_tw2','capaian_anggaran_tw3','capaian_anggaran_tw4'] as $f) $set($item->$f ?? 0);
+                $set($item->keterangan ?? '-');
+
+                $row++;
+            }
+            $no++;
+        }
+
+        $sheet->getStyle('A' . $headerRow1 . ':' . $lastCol . ($row - 1))
+            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        foreach (range('A', $lastCol) as $colLetter) {
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+        $sheet->getColumnDimension('B')->setWidth(30);
+        $sheet->getColumnDimension('D')->setWidth(28);
+
+        $filename = 'Pengukuran_Periodik_' . str_replace(' ', '_', $namaOpd) . '_' . $tahun . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
     // ════════════════════════════════════════════════════
     //  DOWNLOAD FILE BUKTI
     // ════════════════════════════════════════════════════

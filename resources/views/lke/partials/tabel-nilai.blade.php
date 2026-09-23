@@ -1,21 +1,12 @@
-{{--
-  Partial tabel nilai LKE — dipakai dua kali:
-  1) mode='operator' → Lembar Kerja Operator (nilai asli)
-  2) mode='evaluator' → Lembar Kerja Evaluator (nilai resmi, dipakai Rekap)
-
-  Parameter wajib dari pemanggil:
-  $mode              : 'operator' | 'evaluator'
-  $editable          : bool — apakah user saat ini boleh mengedit tabel ini
-  $judulLembar       : string judul header
-  $nilaiPerSubX       : array nilai per sub-komponen (sesuai mode)
-  $nilaiKomponenUtamaX: array total per komponen utama (sesuai mode)
-  $nilaiAkhirX        : float total akhir
---}}
 @php
   $idPrefix     = $mode; // 'operator' atau 'evaluator'
   $fieldJawaban = $mode === 'operator' ? 'jawaban_operator' : 'jawaban';
   $warnaMapLocal = ['AA'=>'#059669','A'=>'#2563eb','BB'=>'#7c3aed','B'=>'#d4982e','CC'=>'#f59e0b','C'=>'#dc2626','D'=>'#991b1b','E'=>'#6b7280'];
   $accentColor  = $mode === 'operator' ? '#3b82f6' : '#10b981';
+
+  // operator: No, Komponen, Bobot, Nilai, Jawaban, Catatan Operator, Evidence&Dokumen = 7
+  // evaluator: No, Komponen, Bobot, Nilai, Jawaban, Catatan Evaluasi/Operator, Komentar Verifikator, Evidence&Dokumen = 8
+  $totalKolom = $mode === 'evaluator' ? 8 : 7;
 @endphp
 
 <div class="lke-card" style="margin-top:24px;">
@@ -41,6 +32,7 @@
         @if($mode === 'evaluator')
           <th style="width:160px;">Catatan Evaluasi</th>
           <th style="width:160px;">Komentar Verifikator</th>
+          <th style="width:200px;">Evidence &amp; Dokumen</th>
         @else
           <th style="width:160px;">Catatan Operator</th>
           <th style="width:200px;">Evidence &amp; Dokumen</th>
@@ -64,7 +56,7 @@
             {{ number_format($nilaiK, 2) }}
           </span>
         </td>
-        <td colspan="3" style="color:rgba(255,255,255,.25);text-align:center;font-size:11px;">—</td>
+        <td colspan="{{ $totalKolom - 4 }}" style="color:rgba(255,255,255,.25);text-align:center;font-size:11px;">—</td>
       </tr>
 
       @foreach($subKomponen->where('parent_id', $k->id) as $s)
@@ -140,6 +132,7 @@
               @endif
             </td>
             <td style="text-align:center;font-size:10px;color:var(--t4);">(per kriteria)</td>
+            <td style="text-align:center;font-size:10px;color:var(--t4);">(per kriteria)</td>
           @else
             <td style="text-align:center;font-size:10px;color:var(--t4);">(per kriteria)</td>
             <td style="text-align:center;font-size:10px;color:var(--t4);">(per kriteria)</td>
@@ -175,6 +168,28 @@
                   @else
                     <span style="font-size:11px;color:var(--t4);font-style:italic;">Belum ada komentar</span>
                   @endif
+                @endif
+              </td>
+              {{-- ⭐ BARU: Evidence & Dokumen — read-only untuk Evaluator (lihat saja, tidak bisa upload/hapus) --}}
+              <td style="vertical-align:top;">
+                @if($cat?->daftar_evidence)
+                  <div style="font-size:11px;line-height:1.6;color:var(--t2);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 10px;margin-bottom:6px;white-space:pre-line;">
+                    {!! \App\Helpers\TextHelper::linkify($cat->daftar_evidence ?? '') !!}
+                  </div>
+                @endif
+
+                @if(count($docs) > 0)
+                  @foreach($docs as $doc)
+                    <div class="doc-item">
+                      <span style="font-size:12px;">📄</span>
+                      <span class="doc-name" title="{{ $doc->nama_file }}">{{ $doc->nama_file }}</span>
+                      <a href="{{ route('evaluasi.lke.lihat.dokumen', $doc->id) }}" target="_blank" class="btn btn-lihat">👁</a>
+                    </div>
+                  @endforeach
+                @elseif(!$cat?->daftar_evidence)
+                  <div style="padding:5px 8px;font-size:10.5px;color:var(--t4);font-style:italic;background:rgba(255,255,255,.02);border-radius:6px;text-align:center;">
+                    Belum ada evidence/dokumen
+                  </div>
                 @endif
               </td>
             @else
@@ -233,16 +248,17 @@
           </tr>
         @endforeach {{-- ✅ tutup foreach kriteria --}}
 
-        <tr class="row-total">
-          <td colspan="3" style="text-align:right;padding-right:16px;">Total — {{ $k->nama }}</td>
-          <td style="text-align:center;">
-            <span id="{{ $idPrefix }}_total_bawah_{{ $k->id }}" style="font-size:18px;font-weight:900;">{{ number_format($nilaiK, 2) }}</span>
-          </td>
-          <td colspan="3" style="color:var(--t4);">—</td>
-        </tr>
-        <tr class="row-spacer"><td colspan="7"></td></tr>
-
       @endforeach {{-- ✅ tutup foreach subKomponen --}}
+
+      <tr class="row-total">
+        <td colspan="3" style="text-align:right;padding-right:16px;">Total — {{ $k->nama }}</td>
+        <td style="text-align:center;">
+          <span id="{{ $idPrefix }}_total_bawah_{{ $k->id }}" style="font-size:18px;font-weight:900;">{{ number_format($nilaiK, 2) }}</span>
+        </td>
+        <td colspan="{{ $totalKolom - 4 }}" style="color:var(--t4);">—</td>
+      </tr>
+      <tr class="row-spacer"><td colspan="{{ $totalKolom }}"></td></tr>
+
     @endforeach {{-- ✅ tutup foreach komponenUtama --}}
 
     <tr class="row-grand">
@@ -254,7 +270,7 @@
           {{ number_format($nilaiAkhirX, 2) }}
         </span>
       </td>
-      <td colspan="3"></td>
+      <td colspan="{{ $totalKolom - 4 }}"></td>
     </tr>
 
     </tbody>

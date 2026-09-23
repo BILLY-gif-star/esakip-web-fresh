@@ -217,7 +217,7 @@
 @if($role === 'evaluator')
 
 <div class="card" style="margin-bottom:20px;">
-    <div class="welcome-small">Selamat Datang, Evaluator</div>
+    <div class="welcome-small">Selamat Datang, Verifikator</div>
     <div class="welcome-name">{{ strtoupper($user['nama']) }}</div>
     <div class="welcome-sub">Anda bertugas menilai LKE AKIP</div>
 </div>
@@ -321,8 +321,8 @@
     <div class="welcome-small">
         @if($user['role'] === 'admin')
             Selamat Datang, Administrator
-        @elseif($user['role'] === 'evaluator')
-            Selamat Datang, Evaluator
+        @elseif($user['role'] === 'Verivikator')
+            Selamat Datang, Verivikator
         @else
             Selamat Datang
         @endif
@@ -333,8 +333,8 @@
     <div class="welcome-sub">
         @if($user['role'] === 'admin')
             <span class="badge badge-danger">Administrator</span>
-        @elseif($user['role'] === 'evaluator')
-            <span class="badge badge-warning">Evaluator</span>
+        @elseif($user['role'] === 'verifikator')
+            <span class="badge badge-warning">verifikator</span>
         @else
             <span class="badge badge-info">Operator</span>
         @endif

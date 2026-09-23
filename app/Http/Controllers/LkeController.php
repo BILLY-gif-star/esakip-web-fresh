@@ -1,8 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
@@ -666,6 +672,274 @@ public function simpanNilai(Request $request)
         return response()->json(['ok' => true]);
     }
 
+     public function exportExcel(Request $request)
+    {
+        $user  = Session::get('user');
+        $tahun = (int) $request->input('tahun', $this->tahunEvaluasi());
+        $opdId = $user['role'] === 'operator' ? $user['daerah_id'] : $request->input('opd_id');
+ 
+        if (!$opdId) {
+            return back()->with('error', 'Pilih OPD terlebih dahulu sebelum mencetak.');
+        }
+ 
+        $opd     = DB::table('perangkat_daerah')->where('id', $opdId)->first();
+        $namaOpd = $opd->nama ?? 'OPD';
+ 
+        $komponenUtama = DB::table('lke_komponen')->whereNull('parent_id')->orderBy('urutan')->get();
+        $subKomponen   = DB::table('lke_komponen')->whereNotNull('parent_id')->orderBy('parent_id')->orderBy('urutan')->get();
+        $kriteriaAll   = DB::table('lke_kriteria')->orderBy('komponen_id')->orderBy('nomor')->get()->groupBy('komponen_id');
+ 
+        $penilaian = DB::table('lke_penilaian')
+            ->where('perangkat_daerah_id', $opdId)->where('tahun', $tahun)
+            ->get()->keyBy('komponen_id'); // komponen_id di sini = id sub-komponen
+ 
+        $kriteriaIds = $kriteriaAll->flatten()->pluck('id');
+ 
+        $catatanKriteria = DB::table('lke_penilaian_kriteria')
+            ->where('perangkat_daerah_id', $opdId)->where('tahun', $tahun)
+            ->whereIn('kriteria_id', $kriteriaIds)
+            ->get()->keyBy('kriteria_id');
+ 
+        $dokumenPerKriteria = DB::table('lke_dokumen_kriteria')
+            ->where('perangkat_daerah_id', $opdId)->where('tahun', $tahun)
+            ->whereIn('kriteria_id', $kriteriaIds)
+            ->get()->groupBy('kriteria_id');
+ 
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->removeSheetByIndex(0); // buang sheet kosong default
+ 
+// ── Sheet 1: Lembar Evaluator (mode 'operator' = self-assessment) ──
+$sheetOp = new Worksheet($spreadsheet, 'Lembar Evaluator');
+$spreadsheet->addSheet($sheetOp);
+$this->tulisLembarLkeKeSheet(
+    $sheetOp, 'operator', $namaOpd, $tahun,
+    $komponenUtama, $subKomponen, $kriteriaAll,
+    $penilaian, $catatanKriteria, $dokumenPerKriteria
+);
+
+// ── Sheet 2: Lembar Verifikator (mode 'evaluator' = nilai resmi) ──
+$sheetEv = new Worksheet($spreadsheet, 'Lembar Verifikator');
+$spreadsheet->addSheet($sheetEv);
+$this->tulisLembarLkeKeSheet(
+    $sheetEv, 'evaluator', $namaOpd, $tahun,
+    $komponenUtama, $subKomponen, $kriteriaAll,
+    $penilaian, $catatanKriteria, $dokumenPerKriteria
+);
+ 
+        $spreadsheet->setActiveSheetIndex(1); // buka di tab Evaluator (nilai resmi) saat file dibuka
+ 
+        // ── Output ──
+        $filename = 'LKE_AKIP_' . str_replace(' ', '_', $namaOpd) . '_' . $tahun . '.xlsx';
+ 
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+ 
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+ 
+    /**
+     * Tulis satu lembar kerja (operator ATAU evaluator) ke satu Worksheet.
+     * Kolom & sumber data disamakan persis dengan
+     * lke/partials/tabel-nilai.blade.php untuk mode yang sama.
+     */
+    private function tulisLembarLkeKeSheet(
+        $sheet, string $mode, string $namaOpd, int $tahun,
+        $komponenUtama, $subKomponen, $kriteriaAll,
+        $penilaian, $catatanKriteria, $dokumenPerKriteria
+    ): void {
+        $fieldJawaban = $mode === 'operator' ? 'jawaban_operator' : 'jawaban';
+        $fieldNilai   = $mode === 'operator' ? 'nilai_operator'   : 'nilai';
+ 
+        if ($mode === 'operator') {
+            $header     = ['No', 'Komponen / Sub Komponen / Kriteria', 'Bobot', 'Jawaban (Predikat)', 'Nilai',
+                           'Catatan Operator', 'Komentar Verifikator', 'Evidence & Dokumen'];
+            $lastCol    = 'H';
+            $colDokumen = 'H'; // kolom tempat link dokumen ditulis di baris tambahan
+        } else {
+            $header     = ['No', 'Komponen / Sub Komponen / Kriteria', 'Bobot', 'Jawaban (Predikat)', 'Nilai',
+                           'Catatan Evaluasi', 'Catatan Operator', 'Komentar Verifikator', 'Evidence & Dokumen'];
+            $lastCol    = 'I';
+            $colDokumen = 'I';
+        }
+ 
+        $judul = $mode === 'operator'
+            ? 'LEMBAR EVALUATOR (SELF-ASSESSMENT)'
+            : 'LEMBAR VERIFIKATOR ( DIPAKAI DI REKAP)';
+ 
+        $bgHeader = $mode === 'operator' ? '1D4E6B' : '6B1D1D';
+ 
+        $sheet->setCellValue('A1', $judul);
+        $sheet->mergeCells('A1:' . $lastCol . '1');
+        $sheet->setCellValue('A2', strtoupper($namaOpd) . ' — TAHUN ' . $tahun);
+        $sheet->mergeCells('A2:' . $lastCol . '2');
+        $sheet->getStyle('A1:A2')->getFont()->setBold(true)->setSize(13);
+        $sheet->getStyle('A1:A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+ 
+        $headerRow = 4;
+        $sheet->fromArray($header, null, 'A' . $headerRow);
+        $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $headerRow)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $headerRow)->getFill()
+            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($bgHeader);
+        $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $headerRow)->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+ 
+        $row = $headerRow + 1;
+        $nilaiAkhir = 0;
+ 
+        foreach ($komponenUtama as $k) {
+            $sheet->setCellValue('B' . $row, strtoupper($k->nama));
+            $sheet->setCellValue('C' . $row, number_format($k->bobot, 2, ',', '.'));
+            $sheet->mergeCells('D' . $row . ':' . $lastCol . $row);
+            $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFill()
+                ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2E9E9');
+            $row++;
+ 
+            $totalKomponen = 0;
+ 
+            foreach ($subKomponen->where('parent_id', $k->id) as $s) {
+                $p = $penilaian[$s->id] ?? null;
+                $jawaban  = $p->{$fieldJawaban} ?? '-';
+                $nilaiSub = $p ? floatval($p->{$fieldNilai} ?? 0) : 0;
+                $totalKomponen += $nilaiSub;
+ 
+                $sheet->setCellValue('B' . $row, '  ' . $s->nama);
+                $sheet->setCellValue('C' . $row, number_format($s->bobot, 2, ',', '.'));
+                $sheet->setCellValue('D' . $row, $jawaban);
+                $sheet->setCellValue('E' . $row, number_format($nilaiSub, 2, ',', '.'));
+                $sheet->getStyle('D' . $row . ':E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+ 
+                if ($mode === 'evaluator') {
+                    $sheet->setCellValue('F' . $row, $p->catatan ?? '');
+                    $sheet->mergeCells('G' . $row . ':' . $lastCol . $row);
+                    $sheet->getStyle('F' . $row)->getAlignment()->setWrapText(true);
+                } else {
+                    $sheet->mergeCells('F' . $row . ':' . $lastCol . $row);
+                }
+                $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFont()->setItalic(true);
+                $row++;
+ 
+                foreach (($kriteriaAll[$s->id] ?? []) as $kr) {
+                    $pk = $catatanKriteria[$kr->id] ?? null;
+ 
+                    $catOperator   = $pk->catatan_operator ?? '';
+                    $komentarVerif = $pk->komentar_admin ?? '';
+                    $evidenceRaw   = $pk->daftar_evidence ?? '';
+                    $docs          = $dokumenPerKriteria[$kr->id] ?? collect();
+ 
+                    // ⭐ Pisahkan teks evidence: baris yang berupa URL (http/https)
+                    // dijadikan link tersendiri, sisanya tetap teks biasa.
+                    $evidenceTeksBiasa = [];
+                    $evidenceLinks     = [];
+                    foreach (preg_split('/\r\n|\r|\n/', trim($evidenceRaw)) as $baris) {
+                        $baris = trim($baris);
+                        if ($baris === '') continue;
+                        if (preg_match('/^https?:\/\/\S+/i', $baris, $m)) {
+                            $evidenceLinks[] = $m[0];
+                            $sisaTeks = trim(substr($baris, strlen($m[0])));
+                            if ($sisaTeks !== '') $evidenceTeksBiasa[] = $sisaTeks;
+                        } else {
+                            $evidenceTeksBiasa[] = $baris;
+                        }
+                    }
+                    $evidenceText = implode("\n", $evidenceTeksBiasa);
+ 
+                    $sheet->setCellValue('A' . $row, $kr->nomor);
+                    $sheet->setCellValue('B' . $row, '      ' . $kr->uraian);
+ 
+                    if ($mode === 'operator') {
+                        $sheet->setCellValue('F' . $row, $catOperator);
+                        $sheet->setCellValue('G' . $row, $komentarVerif);
+                        $sheet->setCellValue('H' . $row, $evidenceText); // teks evidence non-link saja, link & dokumen menyusul di baris bawah
+                        $sheet->getStyle('F' . $row . ':H' . $row)->getAlignment()->setWrapText(true);
+                    } else {
+                        $sheet->setCellValue('G' . $row, $catOperator);
+                        $sheet->setCellValue('H' . $row, $komentarVerif);
+                        $sheet->setCellValue('I' . $row, $evidenceText);
+                        $sheet->getStyle('G' . $row . ':I' . $row)->getAlignment()->setWrapText(true);
+                    }
+ 
+                    $sheet->getStyle('A' . $row)->getFont()->setSize(9);
+                    $sheet->getStyle('B' . $row . ':' . $lastCol . $row)->getFont()->setSize(9);
+                    $sheet->getStyle('B' . $row)->getAlignment()->setWrapText(true);
+                    $row++;
+ 
+                    // ⭐ Baris tambahan per URL yang ditulis manual di teks evidence — jadi hyperlink
+                    foreach ($evidenceLinks as $link) {
+                        $sheet->setCellValue('B' . $row, '        ↳ link evidence');
+                        $sheet->getStyle('B' . $row)->getFont()->setSize(9)->setItalic(true);
+ 
+                        $sheet->setCellValue($colDokumen . $row, '🔗 ' . $link);
+                        $sheet->getCell($colDokumen . $row)->getHyperlink()->setUrl($link);
+                        $sheet->getStyle($colDokumen . $row)->getFont()
+                            ->setSize(9)->setUnderline(true)->getColor()->setRGB('2563EB');
+ 
+                        $row++;
+                    }
+ 
+                    // ⭐ Baris tambahan per dokumen upload — nama file jadi hyperlink yang bisa diklik
+                    foreach ($docs as $doc) {
+                        $url = route('evaluasi.lke.lihat.dokumen', $doc->id);
+ 
+                        $sheet->setCellValue('B' . $row, '        ↳ dokumen pendukung');
+                        $sheet->getStyle('B' . $row)->getFont()->setSize(9)->setItalic(true);
+ 
+                        $sheet->setCellValue($colDokumen . $row, '📄 ' . $doc->nama_file);
+                        $sheet->getCell($colDokumen . $row)->getHyperlink()->setUrl($url);
+                        $sheet->getStyle($colDokumen . $row)->getFont()
+                            ->setSize(9)->setUnderline(true)->getColor()->setRGB('2563EB');
+ 
+                        $row++;
+                    }
+                }
+            }
+ 
+            $sheet->setCellValue('B' . $row, 'Subtotal ' . $k->nama);
+            $sheet->setCellValue('E' . $row, number_format($totalKomponen, 2, ',', '.'));
+            $sheet->mergeCells('B' . $row . ':D' . $row);
+            $sheet->mergeCells('F' . $row . ':' . $lastCol . $row);
+            $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFill()
+                ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FDF6E3');
+            $row++;
+ 
+            $nilaiAkhir += $totalKomponen;
+        }
+ 
+        $predikat = $this->getPredikat($nilaiAkhir);
+        $row++;
+        $sheet->setCellValue('B' . $row, $mode === 'operator' ? 'TOTAL NILAI OPERATOR (ASLI)' : 'NILAI AKHIR RESMI (EVALUATOR)');
+        $sheet->setCellValue('E' . $row, number_format($nilaiAkhir, 2, ',', '.'));
+        $sheet->mergeCells('B' . $row . ':D' . $row);
+        $sheet->mergeCells('F' . $row . ':' . $lastCol . $row);
+        $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFill()
+            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($bgHeader);
+        $row++;
+        $sheet->setCellValue('B' . $row, 'KATEGORI');
+        $sheet->setCellValue('E' . $row, $predikat['kode'] . ' — ' . str_replace($predikat['kode'] . ' — ', '', $predikat['label']));
+        $sheet->mergeCells('B' . $row . ':D' . $row);
+        $sheet->mergeCells('F' . $row . ':' . $lastCol . $row);
+        $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFont()->setBold(true);
+ 
+        $sheet->getColumnDimension('A')->setWidth(6);
+        $sheet->getColumnDimension('B')->setWidth(48);
+        $sheet->getColumnDimension('C')->setWidth(8);
+        $sheet->getColumnDimension('D')->setWidth(10);
+        $sheet->getColumnDimension('E')->setWidth(9);
+        $sheet->getColumnDimension('F')->setWidth(26);
+        $sheet->getColumnDimension('G')->setWidth(26);
+        $sheet->getColumnDimension('H')->setWidth(28);
+        if ($mode === 'evaluator') {
+            $sheet->getColumnDimension('I')->setWidth(28);
+        }
+ 
+        $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $row)
+            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+    }
     // ════════════════════════════════════════════════════
     //  DAFTAR SEMUA DOKUMEN (admin only)
     // ════════════════════════════════════════════════════

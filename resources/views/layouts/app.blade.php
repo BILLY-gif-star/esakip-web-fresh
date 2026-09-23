@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -925,6 +924,13 @@ body {
   color: var(--text-light); 
 }
 
+/* Fix kontras <option> di dalam <select class="form-control">
+   — browser tidak mewarisi color dari .form-control ke <option> */
+select.form-control option {
+  background: var(--bg-card-solid);
+  color: var(--text-primary);
+}
+
 /* Table */
 .table-wrap { 
   overflow-x: auto; 
@@ -1483,14 +1489,20 @@ tbody tr:hover td {
         <a href="{{ route('juknis.index') }}" class="nav-sub {{ request()->routeIs('juknis.index') ? 'active' : '' }}">Kelola Juknis</a>
       </div>
 
+      {{-- ═══════════════════════════════════════════════════════
+           EVALUASI KINERJA (ADMIN)
+           — LHE AKIP & Rekapan Hasil LKE AKIP dipindah ke sini
+      ═══════════════════════════════════════════════════════ --}}
       <a class="nav-item nav-group-toggle" onclick="toggleNav('grpEvaluasiAdmin', this)">
         <span class="nav-icon">📊</span>
         <span class="nav-label">Evaluasi Kinerja</span>
         <span class="nav-arrow">▾</span>
       </a>
-      <div class="nav-group-body {{ request()->is('evaluasi/*') ? 'open' : '' }}" id="grpEvaluasiAdmin">
+      <div class="nav-group-body {{ request()->is('evaluasi/*') || request()->routeIs('lhe-akip.*') || request()->routeIs('rekapan.hasil*') ? 'open' : '' }}" id="grpEvaluasiAdmin">
         <a href="{{ route('evaluasi.juknis') }}" class="nav-sub {{ request()->routeIs('evaluasi.juknis') ? 'active' : '' }}">Juknis</a>
         <a href="{{ route('evaluasi.lke') }}"    class="nav-sub {{ request()->routeIs('evaluasi.lke') ? 'active' : '' }}">LKE AKIP</a>
+        <a href="{{ route('lhe-akip.index') }}"  class="nav-sub {{ request()->routeIs('lhe-akip.*') ? 'active' : '' }}">LHE AKIP</a>
+        <a href="{{ route('rekapan.hasil') }}"   class="nav-sub {{ request()->routeIs('rekapan.hasil*') ? 'active' : '' }}">Rekapan Hasil LKE AKIP</a>
       </div>
 
       <div class="nav-divider"></div>
@@ -1523,12 +1535,6 @@ tbody tr:hover td {
       <a href="{{ route('admin.arsip') }}" class="nav-item {{ request()->routeIs('admin.arsip*') ? 'active' : '' }}">
         <span class="nav-icon">🗂️</span>
         <span class="nav-label">Arsip Dokumen</span>
-      </a>
-
-      <a href="{{ route('rekapan.hasil') }}" class="nav-item {{ request()->routeIs('rekapan.hasil*') ? 'active' : '' }}">
-        <span class="nav-icon">📊</span>
-        <span class="nav-label">Rekapan Hasil LKE</span>
-        <span class="nav-badge" style="background: #6366f1;">AKIP</span>
       </a>
 
     @endif
@@ -1596,6 +1602,7 @@ tbody tr:hover td {
         <a href="{{ route('evaluasi.lke') }}"    class="nav-sub {{ request()->routeIs('evaluasi.lke') ? 'active' : '' }}">LKE AKIP</a>
       </div>
     @endif
+
 {{-- ════ TOGGLE THEME ════ --}}
 <div class="sidebar-footer">
   

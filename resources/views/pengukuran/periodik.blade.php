@@ -4,15 +4,17 @@
 @section('page-sub', 'Minimal Pengukuran Kinerja Periodik')
 
 @section('topbar-actions')
-    @if(session('user.role') === 'operator')
+    @if(session('user.role') === 'operator' && $opdId)
     <div style="display:flex;gap:10px;">
-        <button onclick="window.print();" class="btn-print-glass">
+        <a href="{{ route('pengukuran.periodik.export', ['tahun' => $tahun, 'opd_id' => $opdId]) }}" class="btn-print-glass">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9V3h12v6M6 21H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/>
-                <path d="M6 15h12v6H6z"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
             </svg>
-            Cetak / PDF
-        </button>
+            Cetak (Excel)
+        </a>
     </div>
     @endif
 @endsection
@@ -26,11 +28,12 @@
 
 /* ─── TOOLBAR (dulu Excel-white, sekarang glass bar) ─── */
 .xls-toolbar{
-    background:rgba(255,255,255,.04);
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:10px;
+    background:linear-gradient(135deg,rgba(69,198,122,.06),rgba(255,255,255,.03));
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
     padding:14px 18px;margin-bottom:16px;
     display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    box-shadow:0 4px 16px rgba(0,0,0,.15);
 }
 .xls-toolbar-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);white-space:nowrap;}
 .xls-toolbar select{
@@ -65,6 +68,28 @@
 }
 .btn-add-main:hover{background:rgba(69,198,122,.4);transform:translateY(-1px);}
 
+/* ─── STAT MINI CARDS ────────────────────────────────── */
+.stat-mini-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;margin-bottom:16px;
+}
+.stat-mini-card{
+    background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.08);border-radius:12px;
+    padding:14px 16px;display:flex;align-items:center;gap:12px;
+    transition:all .2s;
+}
+.stat-mini-card:hover{
+    border-color:rgba(69,198,122,.3);transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.stat-mini-icon{
+    width:40px;height:40px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.stat-mini-value{font-size:20px;font-weight:800;color:#fff;line-height:1.1;}
+.stat-mini-label{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:2px;font-weight:500;}
+
 /* ─── SHEET WRAPPER (dulu putih, sekarang glass card) ── */
 .sheet-wrap{
     background:rgba(255,255,255,.02);
@@ -72,10 +97,11 @@
     border-radius:10px;overflow:hidden;margin-bottom:14px;
 }
 .sheet-header{
-    background:rgba(69,198,122,.1);
-    border-bottom:1px solid rgba(69,198,122,.2);
-    padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(90deg,rgba(69,198,122,.16),rgba(59,130,246,.08));
+    border-bottom:1px solid rgba(69,198,122,.25);
+    padding:12px 18px;display:flex;align-items:center;justify-content:space-between;
 }
+.sheet-title-bar{font-size:13px;}
 .sheet-title-bar{color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;}
 .sheet-tabs{display:flex;gap:4px;}
 .sheet-tab{
@@ -150,10 +176,11 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
 
 /* ── sasaran cell (dulu biru solid mode-terang) ── */
 .sasaran-cell{
-    background:rgba(59,130,246,.08);
+    background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(59,130,246,.03));
     border-left:3px solid #3b82f6 !important;
     border-top:2px solid rgba(59,130,246,.25) !important;
-    vertical-align:top !important;padding:10px 10px 8px !important;min-width:175px;
+    vertical-align:top !important;padding:12px 12px 10px !important;min-width:175px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
 }
 .sasaran-cell-content{display:flex;flex-direction:column;gap:6px;}
 .sasaran-cell-num{
@@ -199,9 +226,14 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
 
 /* ── statusbar ── */
 .xls-statusbar{
-    background:rgba(69,198,122,.1);border-top:1px solid rgba(69,198,122,.2);
-    color:rgba(255,255,255,.75);padding:8px 16px;font-size:11px;
-    display:flex;gap:20px;align-items:center;
+    background:linear-gradient(90deg,rgba(69,198,122,.12),rgba(255,255,255,.02));
+    border-top:1px solid rgba(69,198,122,.2);
+    color:rgba(255,255,255,.75);padding:10px 18px;font-size:11px;
+    display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+}
+.xls-statusbar span{
+    opacity:.9;display:flex;align-items:center;gap:6px;
+    padding:3px 10px;background:rgba(255,255,255,.04);border-radius:20px;
 }
 .xls-statusbar span{opacity:.85;display:flex;align-items:center;gap:5px;}
 
@@ -342,8 +374,15 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
 .alert{border-radius:8px;padding:11px 16px;font-size:13px;margin-bottom:14px;border:1px solid;}
 .alert-success{background:rgba(69,198,122,.1);border-color:rgba(69,198,122,.3);color:#7fe3a8;}
 .alert-danger{background:rgba(226,75,74,.1);border-color:rgba(226,75,74,.3);color:#f3a5a4;}
-.empty-state{text-align:center;padding:70px 20px;}
-.empty-icon{font-size:52px;margin-bottom:14px;opacity:.5;}
+.empty-state{
+    text-align:center;padding:60px 20px;
+    background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+    border:1px dashed rgba(255,255,255,.1);border-radius:14px;
+}
+.empty-icon{
+    font-size:56px;margin-bottom:14px;opacity:.6;
+    filter:drop-shadow(0 4px 12px rgba(69,198,122,.2));
+}
 .empty-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:6px;}
 .empty-sub{font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;}
 
@@ -434,10 +473,12 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
         @endif
         <button type="submit" class="btn-tampilkan">Tampilkan</button>
         <div style="flex:1;"></div>
-        <button type="button" onclick="window.print();" class="btn-print-glass">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 21H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><path d="M6 15h12v6H6z"/></svg>
-            Cetak / PDF
-        </button>
+        @if($opdId)
+        <a href="{{ route('pengukuran.periodik.export', ['tahun' => $tahun, 'opd_id' => $opdId]) }}" class="btn-print-glass">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Cetak (Excel)
+        </a>
+        @endif
         @if($isOperator)
         <button type="button" id="btnTambah" class="btn-add-main">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -446,6 +487,41 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
         @endif
     </form>
 </div>
+
+@if($opdId && $data->count() > 0)
+<div class="stat-mini-grid">
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background:rgba(59,130,246,.15);color:#60a5fa;">🎯</div>
+        <div>
+            <div class="stat-mini-value">{{ $data->count() }}</div>
+            <div class="stat-mini-label">Sasaran Strategis</div>
+        </div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background:rgba(69,198,122,.15);color:#7fe3a8;">📊</div>
+        <div>
+            <div class="stat-mini-value">{{ $data->sum(fn($v) => $v->count()) }}</div>
+            <div class="stat-mini-label">Total Indikator</div>
+        </div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background:rgba(217,164,65,.15);color:#e8c476;">📅</div>
+        <div>
+            <div class="stat-mini-value">{{ $tahun }}</div>
+            <div class="stat-mini-label">Tahun Pengukuran</div>
+        </div>
+    </div>
+    @if($isOperator)
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background:rgba(139,92,246,.15);color:#c4b5fd;">⚡</div>
+        <div>
+            <div class="stat-mini-value" style="font-size:14px;">Auto-Save</div>
+            <div class="stat-mini-label">Aktif Saat Diketik</div>
+        </div>
+    </div>
+    @endif
+</div>
+@endif
 
 {{-- ══ EMPTY ══ --}}
 @if(!$opdId && $isAdmin)
@@ -460,10 +536,13 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
     <div class="empty-title">Belum Ada Data</div>
     <div class="empty-sub">
         Anda belum mengisi data pengukuran kinerja untuk tahun {{ $tahun }}.<br>
-        Klik tombol <strong>"Tambah Sasaran + Indikator"</strong> di toolbar untuk memulai.
+        Klik tombol di bawah untuk mulai mengisi sasaran & indikator.
     </div>
+    <button type="button" class="btn-add-main" style="margin-top:18px;" onclick="document.getElementById('btnTambah').click();">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Mulai Isi Data
+    </button>
 </div>
-
 @else
 
 {{-- ══ SHEET / TABLE ══ --}}
@@ -802,10 +881,6 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
                         <label class="form-lbl">Keterangan / Catatan</label>
                         <textarea name="keterangan[]" class="form-ta" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
                     </div>
-                    <div>
-                        <label class="form-lbl">Upload Bukti Dukung <span style="font-weight:400;color:#94a3b8;">(maks 5MB)</span></label>
-                        <input type="file" name="file[]" class="form-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
-                    </div>
                 </div>
 
                 <div class="modal-foot" style="margin:14px -18px -18px;">
@@ -908,10 +983,6 @@ tbody tr:hover .xls-td{background:rgba(255,255,255,.03);}
                                     <div>
                                         <label class="form-lbl">Keterangan / Catatan</label>
                                         <textarea name="keterangan[]" class="form-ta" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
-                                    </div>
-                                    <div>
-                                        <label class="form-lbl">Upload Bukti Dukung <span style="font-weight:400;color:#94a3b8;">(PDF/Word/Excel/Gambar, maks 5MB)</span></label>
-                                        <input type="file" name="file[]" class="form-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
                                     </div>
                                 </div>
                             </div>

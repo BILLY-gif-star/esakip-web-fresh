@@ -8,45 +8,43 @@ use Illuminate\Support\Facades\DB;
 
 class LheAkipController extends Controller
 {
-    /**
-     * Daftar seluruh LHE AKIP yang sudah diinput, dengan filter tahun.
-     */
-    public function index(Request $request)
-    {
-        $tahun = $request->get('tahun', now()->year);
+   public function index(Request $request)
+{
+    $daftarTahun = DB::table('lhe_akip')
+        ->select('tahun_evaluasi')
+        ->distinct()
+        ->orderByDesc('tahun_evaluasi')
+        ->pluck('tahun_evaluasi');
 
-        $data = DB::table('lhe_akip')
-            ->join('perangkat_daerah', 'lhe_akip.perangkat_daerah_id', '=', 'perangkat_daerah.id')
-            ->where('lhe_akip.tahun_evaluasi', $tahun)
-            ->select('lhe_akip.*', 'perangkat_daerah.nama as nama_opd')
-            ->orderBy('perangkat_daerah.nama')
-            ->get();
-
-        // Lengkapi tiap baris dengan nilai live dari lke_penilaian
-        $data = $data->map(function ($row) {
-            $nilai = LheAkip::hitungNilai($row->perangkat_daerah_id, $row->tahun_evaluasi);
-            $row->total_nilai = $nilai['total'];
-            $row->kategori    = $nilai['kategori'];
-            $row->ada_data_lke = $nilai['ada_data'];
-            return $row;
-        });
-
-        $daftarTahun = DB::table('lhe_akip')
-            ->select('tahun_evaluasi')
-            ->distinct()
-            ->orderByDesc('tahun_evaluasi')
-            ->pluck('tahun_evaluasi');
-
-        if ($daftarTahun->isEmpty()) {
-            $daftarTahun = collect([now()->year]);
-        }
-
-        return view('lhe-akip.index', compact('data', 'tahun', 'daftarTahun'));
+    if ($daftarTahun->isEmpty()) {
+        $daftarTahun = collect([now()->year]);
     }
 
+    // ⭐ Default: tahun dari request, atau tahun terbaru yang punya data,
+    //    bukan now()->year — supaya tidak "ketutup" filter tahun kosong
+    $tahun = (int) $request->get('tahun', $daftarTahun->first());
+
+    $data = DB::table('lhe_akip')
+        ->join('perangkat_daerah', 'lhe_akip.perangkat_daerah_id', '=', 'perangkat_daerah.id')
+        ->where('lhe_akip.tahun_evaluasi', $tahun)
+        ->select('lhe_akip.*', 'perangkat_daerah.nama as nama_opd')
+        ->orderBy('perangkat_daerah.nama')
+        ->get();
+
+    // Lengkapi tiap baris dengan nilai live dari lke_penilaian
+    $data = $data->map(function ($row) {
+        $nilai = LheAkip::hitungNilai($row->perangkat_daerah_id, $row->tahun_evaluasi);
+        $row->total_nilai  = $nilai['total'];
+        $row->kategori     = $nilai['kategori'];
+        $row->ada_data_lke = $nilai['ada_data'];
+        return $row;
+    });
+
+    return view('lhe-akip.index', compact('data', 'tahun', 'daftarTahun'));
+}
     /**
      * Form input LHE AKIP baru.
-     * Admin pilih OPD + tahun dulu → nilai dimuat otomatis dari lke_penilaian.
+     * Admin pilih OPD + tahun dulu → nilai & catatan dimuat otomatis.
      */
     public function create()
     {
@@ -68,7 +66,8 @@ class LheAkipController extends Controller
     }
 
     /**
-     * Endpoint AJAX — muat preview nilai untuk kombinasi OPD + tahun tertentu.
+     * Endpoint AJAX — muat preview nilai + catatan untuk kombinasi OPD + tahun tertentu.
+     * Dipanggil dari form.blade.php saat klik "Muat Nilai dari Hasil Evaluasi".
      */
     public function nilaiPreview(Request $request)
     {
@@ -77,27 +76,40 @@ class LheAkipController extends Controller
             'tahun'               => 'required|integer',
         ]);
 
-        $nilai = LheAkip::hitungNilai(
-            (int) $request->perangkat_daerah_id,
-            (int) $request->tahun
-        );
+        $opdId = (int) $request->perangkat_daerah_id;
+        $tahun = (int) $request->tahun;
+
+        $nilai = LheAkip::hitungNilai($opdId, $tahun);
+        $nilai['catatan'] = LheAkip::hitungCatatan($opdId, $tahun); // array 0..3, selaras $nilai['rincian']
 
         return response()->json($nilai);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $this->validasi($request);
-        $validated = $this->prosesArrayInput($request, $validated);
+public function store(Request $request)
+{
+    $validated = $this->validasi($request);
 
-        $validated['created_by'] = session('user.id');
+    // ⭐ Cek duplikat sebelum insert — hindari 500 error mentah
+    $sudahAda = LheAkip::where('perangkat_daerah_id', $validated['perangkat_daerah_id'])
+        ->where('tahun_evaluasi', $validated['tahun_evaluasi'])
+        ->first();
 
-        LheAkip::create($validated);
-
+    if ($sudahAda) {
         return redirect()
-            ->route('lhe-akip.index', ['tahun' => $validated['tahun_evaluasi']])
-            ->with('success', 'LHE AKIP berhasil disimpan.');
+            ->route('lhe-akip.edit', $sudahAda->id)
+            ->with('error', 'LHE AKIP untuk OPD dan tahun ini sudah pernah dibuat. Silakan edit data yang sudah ada.');
     }
+
+    $validated = $this->prosesArrayInput($request, $validated);
+
+    $validated['created_by'] = session('user.id');
+
+    LheAkip::create($validated);
+
+    return redirect()
+        ->route('lhe-akip.index', ['tahun' => $validated['tahun_evaluasi']])
+        ->with('success', 'LHE AKIP berhasil disimpan.');
+}
 
     public function edit(LheAkip $lhe)
     {
@@ -109,13 +121,14 @@ class LheAkipController extends Controller
             ->orderByDesc('tahun')
             ->pluck('tahun');
 
-        $nilaiAwal = LheAkip::hitungNilai($lhe->perangkat_daerah_id, $lhe->tahun_evaluasi);
+        $nilai = LheAkip::hitungNilai($lhe->perangkat_daerah_id, $lhe->tahun_evaluasi);
+        $nilai['catatan'] = LheAkip::hitungCatatan($lhe->perangkat_daerah_id, $lhe->tahun_evaluasi);
 
         return view('lhe-akip.form', [
             'lhe'         => $lhe,
             'daftarOpd'   => $daftarOpd,
             'daftarTahun' => $daftarTahun,
-            'nilaiAwal'   => $nilaiAwal,
+            'nilaiAwal'   => $nilai,
             'mode'        => 'edit',
         ]);
     }
@@ -143,12 +156,14 @@ class LheAkipController extends Controller
 
     /**
      * Halaman cetak/preview — tampilan mirip dokumen surat resmi.
-     * Nilai diambil LIVE dari lke_penilaian saat dicetak.
+     * Nilai (dari lke_penilaian) & catatan (dari komentar Evaluator
+     * di lke_penilaian_kriteria) diambil LIVE saat dicetak.
      */
     public function cetak(LheAkip $lhe)
     {
         $opd   = DB::table('perangkat_daerah')->where('id', $lhe->perangkat_daerah_id)->first();
         $nilai = LheAkip::hitungNilai($lhe->perangkat_daerah_id, $lhe->tahun_evaluasi);
+        $nilai['catatan'] = LheAkip::hitungCatatan($lhe->perangkat_daerah_id, $lhe->tahun_evaluasi);
 
         return view('lhe-akip.cetak', compact('lhe', 'opd', 'nilai'));
     }
@@ -185,19 +200,14 @@ class LheAkipController extends Controller
     }
 
     /**
-     * Poin catatan (textarea per-baris) & rekomendasi → array/JSON.
+     * Poin rekomendasi (textarea per-baris) → array/JSON.
+     * CATATAN: "catatan_*" TIDAK lagi diproses dari input form —
+     * sekarang diambil otomatis dari komentar Evaluator
+     * (lihat LheAkip::hitungCatatan(), dipakai di cetak()/nilaiPreview()).
+     * Kolom catatan_* di tabel lhe_akip dibiarkan ada tapi tidak lagi dipakai.
      */
     private function prosesArrayInput(Request $request, array $data): array
     {
-        foreach (['catatan_perencanaan', 'catatan_pengukuran', 'catatan_pelaporan', 'catatan_evaluasi_internal'] as $field) {
-            $raw = $request->input($field, '');
-            $data[$field] = collect(explode("\n", $raw))
-                ->map(fn ($baris) => trim($baris))
-                ->filter()
-                ->values()
-                ->all();
-        }
-
         $labelKomponen = [
             'perencanaan'       => 'Perencanaan Kinerja',
             'pengukuran'        => 'Pengukuran Kinerja',

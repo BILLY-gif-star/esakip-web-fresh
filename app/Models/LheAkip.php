@@ -58,77 +58,184 @@ class LheAkip extends Model
 
     /**
      * ══════════════════════════════════════════════════════════
-     * Hitung nilai per komponen LIVE dari tabel lke_penilaian
-     * yang sudah ada & sudah dinilai lewat menu Evaluasi Kinerja.
+     * Hitung nilai per komponen LIVE dari tabel lke_penilaian.
      *
-     * Struktur lke_komponen: 4 komponen induk (parent_id NULL,
-     * id 1/2/3/4) masing-masing punya sub-kriteria (parent_id = id induk).
-     * lke_penilaian menyimpan nilai di level sub-kriteria (anak),
-     * jadi nilai komponen induk = SUM nilai semua anaknya.
+     * PENTING: logika ini SENGAJA disamakan persis dengan
+     * LkeController::rekap() — supaya nilai yang tampil di surat
+     * LHE selalu identik dengan yang tampil di halaman Rekap Nilai
+     * LKE AKIP. Kalau nanti logika rekap() diubah, method ini
+     * harus ikut disesuaikan.
+     *
+     * Sumber nilai: kolom `lke_penilaian.nilai` (nilai RESMI dari
+     * Evaluator, bukan nilai_operator). Nilai per sub-komponen
+     * dijumlah ke komponen induknya (parent_id), lalu totalnya
+     * dinormalisasi: (total / total_bobot_komponen_induk) * 100
+     * — persis seperti $nilaiAkhirT1/$nilaiAkhirT2 di rekap().
      * ══════════════════════════════════════════════════════════
      */
     public static function hitungNilai(int $perangkatDaerahId, int $tahun): array
     {
-        // Ambil 4 komponen induk + bobotnya
-        $komponenInduk = DB::table('lke_komponen')
+        // Komponen induk (parent_id NULL), urut sesuai `urutan` — sama seperti rekap()
+        $komponenUtama = DB::table('lke_komponen')
             ->whereNull('parent_id')
-            ->orderBy('id')
+            ->orderBy('urutan')
             ->get();
 
-        // Total nilai per komponen induk = SUM nilai sub-kriteria anaknya
-        $nilaiPerInduk = DB::table('lke_penilaian')
-            ->join('lke_komponen', 'lke_penilaian.komponen_id', '=', 'lke_komponen.id')
-            ->where('lke_penilaian.perangkat_daerah_id', $perangkatDaerahId)
-            ->where('lke_penilaian.tahun', $tahun)
-            ->whereNotNull('lke_komponen.parent_id')
-            ->select('lke_komponen.parent_id', DB::raw('SUM(lke_penilaian.nilai) as total_nilai'))
-            ->groupBy('lke_komponen.parent_id')
-            ->pluck('total_nilai', 'lke_komponen.parent_id');
+        // Semua sub-komponen, dikelompokkan per induk — sama seperti rekap()
+        $subKomponen = DB::table('lke_komponen')
+            ->whereNotNull('parent_id')
+            ->get()
+            ->groupBy('parent_id');
 
-        $rincian = [];
-        $totalNilai = 0;
+        // Nilai resmi (kolom `nilai`) untuk OPD + tahun ini, keyBy komponen_id — sama seperti rekap()
+        $penilaian = DB::table('lke_penilaian')
+            ->where('perangkat_daerah_id', $perangkatDaerahId)
+            ->where('tahun', $tahun)
+            ->get()
+            ->keyBy('komponen_id');
 
-        foreach ($komponenInduk as $k) {
-            $nilai = round((float) ($nilaiPerInduk[$k->id] ?? 0), 2);
+        $rincian       = [];
+        $totalRaw      = 0;
+        $totalBobotMax = 0;
+
+        foreach ($komponenUtama as $k) {
+            $subs      = $subKomponen[$k->id] ?? collect();
+            $nilaiKomp = 0;
+            $subRincian = [];
+
+            foreach ($subs as $s) {
+                $nilaiSub = floatval($penilaian[$s->id]->nilai ?? 0);
+                $nilaiKomp += $nilaiSub;
+
+                $subRincian[] = [
+                    'id'    => $s->id,
+                    'nama'  => $s->nama,
+                    'bobot' => (float) $s->bobot,
+                    'nilai' => round($nilaiSub, 2),
+                ];
+            }
+
             $rincian[] = [
-                'id'     => $k->id,
-                'kode'   => $k->kode,
-                'nama'   => $k->nama,
-                'bobot'  => (float) $k->bobot,
-                'nilai'  => $nilai,
+                'id'    => $k->id,
+                'kode'  => $k->kode ?? null,
+                'nama'  => $k->nama,
+                'bobot' => (float) $k->bobot,
+                'nilai' => round($nilaiKomp, 2), // nilai mentah per komponen — sama seperti kolom di tabel Rekap
+                'sub'   => $subRincian,          // rincian sub-komponen di bawahnya
             ];
-            $totalNilai += $nilai;
+
+            $totalRaw      += $nilaiKomp;
+            $totalBobotMax += floatval($k->bobot ?? 0);
         }
 
-        $totalNilai = round($totalNilai, 2);
+        // Normalisasi total — persis seperti rekap(): (total / total_bobot) * 100
+        $totalNilai = $totalBobotMax > 0 ? round(($totalRaw / $totalBobotMax) * 100, 2) : 0.0;
 
         return [
             'rincian'    => $rincian, // urutan tetap: [0]=Perencanaan [1]=Pengukuran [2]=Pelaporan [3]=Eval.Internal
             'total'      => $totalNilai,
             'kategori'   => self::tentukanKategori($totalNilai),
-            'ada_data'   => DB::table('lke_penilaian')
-                                ->where('perangkat_daerah_id', $perangkatDaerahId)
-                                ->where('tahun', $tahun)
-                                ->exists(),
+            'ada_data'   => $penilaian->isNotEmpty(),
         ];
     }
 
+    /**
+     * ══════════════════════════════════════════════════════════
+     * Ambil poin catatan perbaikan OTOMATIS dari komentar Evaluator
+     * (lke_penilaian_kriteria.komentar_admin) — sumber yang SAMA
+     * dengan panel "Komentar Admin" di halaman Rekap Nilai LKE AKIP.
+     *
+     * lke_kriteria.komponen_id merujuk ke SUB-komponen (bukan induk),
+     * jadi harus naik satu level lagi lewat sub.parent_id untuk tahu
+     * komentar itu milik komponen induk yang mana.
+     *
+     * Return: array 0..3 (selaras urutan hitungNilai()['rincian']),
+     * masing-masing berisi list string poin catatan.
+     * ══════════════════════════════════════════════════════════
+     */
+    public static function hitungCatatan(int $perangkatDaerahId, int $tahun): array
+    {
+        $komponenUtama = DB::table('lke_komponen')
+            ->whereNull('parent_id')
+            ->orderBy('urutan')
+            ->get();
+
+        $rows = DB::table('lke_penilaian_kriteria as lpc')
+            ->join('lke_kriteria as lk', 'lpc.kriteria_id', '=', 'lk.id')
+            ->join('lke_komponen as sub', 'lk.komponen_id', '=', 'sub.id')
+            ->where('lpc.perangkat_daerah_id', $perangkatDaerahId)
+            ->where('lpc.tahun', $tahun)
+            ->whereNotNull('lpc.komentar_admin')
+            ->where('lpc.komentar_admin', '!=', '')
+            ->orderBy('lk.nomor')
+            ->select('lpc.komentar_admin', 'lk.nomor', 'sub.parent_id as induk_id')
+            ->get()
+            ->groupBy('induk_id');
+
+        $hasil = [];
+        foreach ($komponenUtama as $idx => $k) {
+            $poin = [];
+            foreach (($rows[$k->id] ?? []) as $r) {
+                $poin[] = 'Kriteria ' . $r->nomor . ': ' . $r->komentar_admin;
+            }
+            $hasil[$idx] = $poin;
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * ══════════════════════════════════════════════════════════
+     * Ambil catatan perbaikan per komponen LIVE dari komentar
+     * Evaluator (lke_penilaian_kriteria.komentar_admin) — sumber
+     * yang sama dengan panel "Komentar Evaluator" di halaman Rekap.
+     *
+     * Dikelompokkan ke komponen INDUK (bukan sub-komponen), supaya
+     * cocok dengan struktur "Evaluasi atas [Komponen]" di surat LHE.
+     * Key hasil = id komponen induk (sama seperti 'id' di rincian
+     * hasil hitungNilai()).
+     * ══════════════════════════════════════════════════════════
+     */
+    public static function ambilCatatan(int $perangkatDaerahId, int $tahun): array
+    {
+        $rows = DB::table('lke_penilaian_kriteria as lpc')
+            ->join('lke_kriteria as lk', 'lpc.kriteria_id', '=', 'lk.id')
+            ->join('lke_komponen as kp', 'lk.komponen_id', '=', 'kp.id') // kp = sub-komponen
+            ->where('lpc.perangkat_daerah_id', $perangkatDaerahId)
+            ->where('lpc.tahun', $tahun)
+            ->whereNotNull('lpc.komentar_admin')
+            ->where('lpc.komentar_admin', '!=', '')
+            ->orderBy('lk.nomor')
+            ->select('lpc.komentar_admin', 'kp.parent_id')
+            ->get();
+
+        $hasil = [];
+        foreach ($rows as $r) {
+            $hasil[$r->parent_id][] = $r->komentar_admin;
+        }
+
+        return $hasil; // [komponen_induk_id => [komentar1, komentar2, ...]]
+    }
+
+    /**
+     * Kategori/predikat — ambang batas disamakan persis dengan
+     * LkeController::getPredikat() (termasuk kategori "E" untuk nilai 0).
+     */
     public static function tentukanKategori(float $nilai): string
     {
-        return match (true) {
-            $nilai > 90 => 'AA',
-            $nilai > 80 => 'A',
-            $nilai > 70 => 'BB',
-            $nilai > 60 => 'B',
-            $nilai > 50 => 'CC',
-            $nilai > 30 => 'C',
-            default     => 'D',
-        };
+        if ($nilai >= 90) return 'AA';
+        if ($nilai >= 80) return 'A';
+        if ($nilai >= 70) return 'BB';
+        if ($nilai >= 60) return 'B';
+        if ($nilai >= 50) return 'CC';
+        if ($nilai >= 30) return 'C';
+        if ($nilai >  0)  return 'D';
+        return 'E';
     }
 
     /**
      * Deskripsi kategori standar KemenPAN-RB — dipakai di cetakan surat
-     * (mis. "BB (SANGAT BAIK)").
+     * (mis. "BB (SANGAT BAIK)"). Disamakan dengan label di getPredikat().
      */
     public static function deskripsiKategori(string $kategori): string
     {
@@ -137,9 +244,10 @@ class LheAkip extends Model
             'A'  => 'MEMUASKAN',
             'BB' => 'SANGAT BAIK',
             'B'  => 'BAIK',
-            'CC' => 'CUKUP (MEMADAI)',
+            'CC' => 'CUKUP BAIK',
             'C'  => 'KURANG',
-            default => 'SANGAT KURANG',
+            'D'  => 'SANGAT KURANG',
+            default => 'TIDAK ADA UPAYA',
         };
     }
 
@@ -149,7 +257,7 @@ class LheAkip extends Model
             'AA', 'A' => 'success',
             'BB', 'B' => 'info',
             'CC'      => 'warning',
-            default   => 'danger',
+            default   => 'danger', // C, D, E
         };
     }
 }

@@ -188,7 +188,8 @@ Route::middleware('auth.esakip')->group(function () {
         Route::post('/lke/upload-dokumen', [LkeController::class, 'uploadDokumen'])->name('lke.upload.dokumen');
         Route::get('/lke/dokumen/{id}',    [LkeController::class, 'lihatDokumen'])->name('lke.lihat.dokumen');
         Route::delete('/lke/dokumen/{id}', [LkeController::class, 'hapusDokumen'])->name('lke.hapus.dokumen');
-        Route::post('/lke/dokumen/{id}',   [LkeController::class, 'hapusDokumen']);   // fallback non-DELETE
+        Route::post('/lke/dokumen/{id}',   [LkeController::class, 'hapusDokumen']);   
+        Route::get('/lke/export-excel', [LkeController::class, 'exportExcel'])->name('lke.export');
     });
 
     // ════════════════════════════════════════════════════════
@@ -211,7 +212,7 @@ Route::middleware('auth.esakip')->group(function () {
         Route::post('/upload-cascading',       [PerjanjianCascadingController::class, 'upload'])->name('upload.cascading');
         Route::post('/review-cascading/{id}',  [PerjanjianCascadingController::class, 'review'])->name('review.cascading');
         Route::delete('/hapus-cascading/{id}', [PerjanjianCascadingController::class, 'hapus'])->name('hapus.cascading');
-
+         Route::post('/upload-dual', [PerjanjianController::class, 'uploadDual'])->name('upload.dual'); // ⭐ BARU
         Route::get('/{jenis}',                 [PerjanjianController::class, 'index'])->name('index');
         Route::post('/upload-template',        [PerjanjianTemplateController::class, 'upload'])->name('upload.template');
         Route::get('/download-template/{id}',  [PerjanjianTemplateController::class, 'download'])->name('download.template');
@@ -236,6 +237,7 @@ Route::middleware('auth.esakip')->group(function () {
         Route::put('/periodik/update-all',           [PengukuranPeriodikController::class, 'updateAll'])->name('periodik.update-all');
         Route::delete('/periodik/hapus/{id}',        [PengukuranPeriodikController::class, 'hapus'])->name('periodik.hapus');
         Route::get('/periodik/download/{id}',        [PengukuranPeriodikController::class, 'download'])->name('periodik.download');
+        Route::get('/periodik/export-excel',          [PengukuranPeriodikController::class, 'exportExcel'])->name('periodik.export');
 
         // Edit indikator (AJAX)
         Route::put('/periodik/{id}/update',          [PengukuranPeriodikController::class, 'update'])->name('periodik.update');

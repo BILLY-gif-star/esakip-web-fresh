@@ -26,41 +26,58 @@
     Rekap Nilai
   </a>
 
-  {{-- 🆕 TOMBOL TOGGLE LEMBAR KERJA --}}
-  <button type="button"
-          id="btnToggleLembar"
-          onclick="toggleLembarKerja()"
-          style="display:inline-flex;align-items:center;gap:7px;
-                 background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);
-                 padding:8px 16px;border-radius:10px;color:#6ee7b7;
-                 font-weight:600;font-size:12px;text-decoration:none;
-                 cursor:pointer;font-family:inherit;transition:all .2s;"
-          onmouseover="this.style.background='rgba(16,185,129,.25)'"
-          onmouseout="this.style.background='rgba(16,185,129,.15)'">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
-    </svg>
-    <span id="btnToggleLembarLabel">
-      {{ $isOperator ? 'Lihat Lembar Verifikator' : ($isEvaluator ? 'Lihat Lembar Evaluator' : 'Lihat Lembar Operator') }}
-    </span>
-  </button>
+  {{-- 🆕 DUA TOMBOL LEMBAR KERJA — hanya evaluator & admin --}}
+  @unless($isOperator)
+  <div style="display:flex;gap:6px;">
+    <button type="button"
+            id="tabBtnOperator"
+            onclick="switchLkeTab('operator')"
+            class="btn-lembar-switch"
+            style="display:inline-flex;align-items:center;gap:7px;
+                   background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);
+                   padding:8px 16px;border-radius:10px;color:#6ee7b7;
+                   font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+      </svg>
+      Evaluator
+    </button>
 
-  @if($isAdmin)
-  <a href="{{ route('evaluasi.lke.dokumen.list') }}?tahun={{ $tahun }}"
+    <button type="button"
+            id="tabBtnEvaluator"
+            onclick="switchLkeTab('evaluator')"
+            class="btn-lembar-switch"
+            style="display:inline-flex;align-items:center;gap:7px;
+                   background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);
+                   padding:8px 16px;border-radius:10px;color:#a5b4fc;
+                   font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>
+      </svg>
+      Verifikator
+    </button>
+  </div>
+  @endunless
+
+ 
+@if($opdId)
+  <a href="{{ route('evaluasi.lke.export', ['tahun' => $tahun, 'opd_id' => $opdId]) }}"
      style="display:inline-flex;align-items:center;gap:7px;
-            background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-            padding:8px 16px;border-radius:10px;color:#e4e4e7;
+            background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);
+            padding:8px 16px;border-radius:10px;color:#6ee7b7;
             font-weight:600;font-size:12px;text-decoration:none;transition:all .2s;"
-     onmouseover="this.style.background='rgba(99,102,241,.25)';this.style.borderColor='rgba(99,102,241,.5)'"
-     onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.borderColor='rgba(255,255,255,.15)'">
+     onmouseover="this.style.background='rgba(16,185,129,.25)'"
+     onmouseout="this.style.background='rgba(16,185,129,.15)'">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
       <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
     </svg>
-    Semua Dokumen
+    Cetak (Excel)
   </a>
-  @endif
+@endif
+ 
 </div>
 @endsection
 

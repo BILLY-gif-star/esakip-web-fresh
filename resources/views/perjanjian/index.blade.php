@@ -477,102 +477,95 @@
      SECTION: UPLOAD DOKUMEN (OPERATOR)
 ══════════════════════════════════════════════ --}}
 @if(session('user.role') === 'operator')
-<div class="pk-card" style="animation-delay:.1s;">
-  <div class="pk-card-header">
-    <div>
-      <div style="font-size:15px;font-weight:700;color:var(--txt-1);">📤 Upload Dokumen Anda</div>
-      <div style="font-size:12px;color:var(--txt-3);margin-top:3px;">
-        {{ session('user.nama_daerah') ?? 'OPD Anda' }} — Tahun {{ $tahun }}
+@if($isDual)
+  {{-- ⭐ DUAL UPLOAD — khusus Perjanjian Kinerja (Murni + Revisi) --}}
+  <div class="pk-card" style="animation-delay:.1s;">
+    <div class="pk-card-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--txt-1);">📤 Upload Dokumen Anda</div>
+        <div style="font-size:12px;color:var(--txt-3);margin-top:3px;">
+          {{ session('user.nama_daerah') ?? 'OPD Anda' }} — Tahun {{ $tahun }}
+        </div>
       </div>
     </div>
-    @if($dokOpd)
-      @if($dokOpd->status === 'disetujui')
-        <span class="badge badge-ok">✓ Disetujui</span>
-      @elseif($dokOpd->status === 'ditolak')
-        <span class="badge badge-err">✗ Perlu Revisi</span>
-      @else
-        <span class="badge badge-warn">⏳ Menunggu</span>
-      @endif
-    @else
-      <span class="badge badge-neutral">Belum diupload</span>
-    @endif
-  </div>
+    <div class="pk-card-body">
 
-  <div class="pk-card-body">
-    @php
-      $opFileExists = false;
-      if ($dokOpd && $dokOpd->nama_file) {
-        $opFileExists = file_exists(storage_path('app/dokumen_opd/' . $dokOpd->nama_file));
-      }
-    @endphp
-
-    {{-- Status alerts --}}
-    @if($dokOpd && $dokOpd->status === 'ditolak')
-      <div class="pk-alert err">
-        <span>❌</span>
-        <span>
-          <strong>Dokumen perlu direvisi.</strong><br>
-          @if($dokOpd->catatan_admin)
-            <span style="font-size:12px;">Catatan Admin: <em>{{ $dokOpd->catatan_admin }}</em></span>
+      {{-- Status ringkas dua dokumen --}}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--txt-1);margin-bottom:8px;">📄 Perjanjian Kinerja Murni</div>
+          @if($dokMurni)
+            <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 14px;">
+              <div style="font-size:12px;font-weight:600;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $dokMurni->nama_file }}</div>
+              <div style="font-size:10px;color:var(--txt-3);margin-top:4px;">
+                Upload: {{ \Carbon\Carbon::parse($dokMurni->updated_at)->format('d M Y H:i') }}
+                @if(!$dokMurni->file_exists) &nbsp;·&nbsp;<span style="color:#f87171;">⚠️ File tidak ditemukan</span> @endif
+              </div>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+                @if($dokMurni->status === 'disetujui') <span class="badge badge-ok">✓ Disetujui</span>
+                @elseif($dokMurni->status === 'ditolak') <span class="badge badge-err">✗ Revisi</span>
+                @else <span class="badge badge-warn">⏳ Menunggu</span> @endif
+                @if($dokMurni->file_exists)
+                  <a href="{{ route('perjanjian.lihat', $dokMurni->id) }}" target="_blank" class="btn btn-ghost" style="padding:4px 10px;">👁 Lihat</a>
+                @endif
+              </div>
+              @if($dokMurni->status === 'ditolak' && $dokMurni->catatan_admin)
+                <div style="margin-top:8px;font-size:11px;color:#f87171;">Catatan: <em>{{ $dokMurni->catatan_admin }}</em></div>
+              @endif
+            </div>
+          @else
+            <div style="padding:14px;text-align:center;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.1);border-radius:12px;color:var(--txt-3);font-size:12px;">Belum diupload</div>
           @endif
-        </span>
-      </div>
-    @elseif($dokOpd && $dokOpd->status === 'disetujui')
-      <div class="pk-alert ok">
-        <span>✅</span>
-        <span><strong>Dokumen telah disetujui!</strong> Tidak perlu mengupload ulang.</span>
-      </div>
-    @elseif($dokOpd && $dokOpd->status === 'menunggu')
-      <div class="pk-alert warn">
-        <span>⏳</span>
-        <span>Dokumen sudah diupload dan sedang menunggu review dari Admin.</span>
-      </div>
-    @endif
-
-    {{-- Info file lama --}}
-    @if($dokOpd && $dokOpd->status !== 'disetujui')
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
-                  border-radius:12px;padding:14px 16px;margin-bottom:18px;
-                  display:flex;align-items:center;gap:12px;">
-        <span style="font-size:22px;">📄</span>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:600;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            {{ $dokOpd->nama_file }}
-          </div>
-          <div style="font-size:11px;color:var(--txt-3);margin-top:2px;">
-            Upload: {{ \Carbon\Carbon::parse($dokOpd->updated_at)->format('d M Y H:i') }}
-            @if(!$opFileExists)
-              &nbsp;·&nbsp;<span style="color:#f87171;">⚠️ File tidak ditemukan</span>
-            @endif
-          </div>
         </div>
-        @if($opFileExists)
-          <a href="{{ route('perjanjian.lihat', $dokOpd->id) }}" target="_blank" class="btn btn-ghost">
-            👁 Lihat
-          </a>
-        @endif
-      </div>
-    @endif
 
-    {{-- Form upload --}}
-    @if(!$dokOpd || $dokOpd->status !== 'disetujui')
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--txt-1);margin-bottom:8px;">📝 Perjanjian Kinerja Revisi</div>
+          @if($dokRevisi)
+            <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 14px;">
+              <div style="font-size:12px;font-weight:600;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $dokRevisi->nama_file }}</div>
+              <div style="font-size:10px;color:var(--txt-3);margin-top:4px;">
+                Upload: {{ \Carbon\Carbon::parse($dokRevisi->updated_at)->format('d M Y H:i') }}
+                @if(!$dokRevisi->file_exists) &nbsp;·&nbsp;<span style="color:#f87171;">⚠️ File tidak ditemukan</span> @endif
+              </div>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+                @if($dokRevisi->status === 'disetujui') <span class="badge badge-ok">✓ Disetujui</span>
+                @elseif($dokRevisi->status === 'ditolak') <span class="badge badge-err">✗ Revisi</span>
+                @else <span class="badge badge-warn">⏳ Menunggu</span> @endif
+                @if($dokRevisi->file_exists)
+                  <a href="{{ route('perjanjian.lihat', $dokRevisi->id) }}" target="_blank" class="btn btn-ghost" style="padding:4px 10px;">👁 Lihat</a>
+                @endif
+              </div>
+              @if($dokRevisi->status === 'ditolak' && $dokRevisi->catatan_admin)
+                <div style="margin-top:8px;font-size:11px;color:#f87171;">Catatan: <em>{{ $dokRevisi->catatan_admin }}</em></div>
+              @endif
+            </div>
+          @else
+            <div style="padding:14px;text-align:center;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.1);border-radius:12px;color:var(--txt-3);font-size:12px;">Belum diupload</div>
+          @endif
+        </div>
+      </div>
+
+      {{-- Form upload dual --}}
       <div class="upload-area">
-        <form method="POST" action="{{ route('perjanjian.upload.dokumen') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('perjanjian.upload.dual') }}" enctype="multipart/form-data">
           @csrf
-          <input type="hidden" name="jenis" value="{{ $cfg['opd'] }}">
           <input type="hidden" name="tahun" value="{{ $tahun }}">
 
           <div class="pk-field">
-            <label class="pk-label">📁 Pilih File Dokumen <span style="color:#f87171;">*</span></label>
-            <input type="file" name="file" class="pk-input" accept=".pdf,.docx,.xlsx,.doc,.xls" required>
-            <div style="font-size:10px;color:var(--txt-3);margin-top:6px;">Format: PDF, DOC, DOCX, XLS, XLSX — Maksimal 5MB</div>
+            <label class="pk-label">📄 File Perjanjian Kinerja Murni</label>
+            <input type="file" name="file_murni" class="pk-input" accept=".pdf,.docx,.xlsx,.doc,.xls">
+            <div style="font-size:10px;color:var(--txt-3);margin-top:6px;">Kosongkan jika tidak ingin mengganti file ini. Maks 5MB.</div>
+          </div>
+
+          <div class="pk-field">
+            <label class="pk-label">📝 File Perjanjian Kinerja Revisi</label>
+            <input type="file" name="file_revisi" class="pk-input" accept=".pdf,.docx,.xlsx,.doc,.xls">
+            <div style="font-size:10px;color:var(--txt-3);margin-top:6px;">Kosongkan jika tidak ingin mengganti file ini. Maks 5MB.</div>
           </div>
 
           <div class="pk-field" style="margin-bottom:20px;">
             <label class="pk-label">📝 Keterangan <span style="color:var(--txt-3);font-weight:400;">(opsional)</span></label>
-            <input type="text" name="keterangan" class="pk-input"
-                   placeholder="Contoh: Dokumen sudah ditandatangani..."
-                   value="{{ $dokOpd->keterangan ?? '' }}">
+            <input type="text" name="keterangan" class="pk-input" placeholder="Contoh: Revisi setelah rapat pembahasan...">
           </div>
 
           <button type="submit"
@@ -582,19 +575,131 @@
                          box-shadow:0 4px 14px rgba(99,102,241,.35);transition:opacity .2s;"
                   onmouseover="this.style.opacity='.85'"
                   onmouseout="this.style.opacity='1'">
-            📤 {{ $dokOpd ? 'Upload Ulang / Revisi' : 'Upload Dokumen' }}
+            📤 Upload Dokumen
           </button>
         </form>
       </div>
-    @endif
+
+    </div>
   </div>
-</div>
+@else
+  {{-- Upload single (jenis lain, tidak berubah) --}}
+  <div class="pk-card" style="animation-delay:.1s;">
+    <div class="pk-card-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--txt-1);">📤 Upload Dokumen Anda</div>
+        <div style="font-size:12px;color:var(--txt-3);margin-top:3px;">
+          {{ session('user.nama_daerah') ?? 'OPD Anda' }} — Tahun {{ $tahun }}
+        </div>
+      </div>
+      @if($dokOpd)
+        @if($dokOpd->status === 'disetujui')
+          <span class="badge badge-ok">✓ Disetujui</span>
+        @elseif($dokOpd->status === 'ditolak')
+          <span class="badge badge-err">✗ Perlu Revisi</span>
+        @else
+          <span class="badge badge-warn">⏳ Menunggu</span>
+        @endif
+      @else
+        <span class="badge badge-neutral">Belum diupload</span>
+      @endif
+    </div>
+
+    <div class="pk-card-body">
+      @php
+        $opFileExists = false;
+        if ($dokOpd && $dokOpd->nama_file) {
+          $opFileExists = file_exists(storage_path('app/dokumen_opd/' . $dokOpd->nama_file));
+        }
+      @endphp
+
+      @if($dokOpd && $dokOpd->status === 'ditolak')
+        <div class="pk-alert err">
+          <span>❌</span>
+          <span>
+            <strong>Dokumen perlu direvisi.</strong><br>
+            @if($dokOpd->catatan_admin)
+              <span style="font-size:12px;">Catatan Admin: <em>{{ $dokOpd->catatan_admin }}</em></span>
+            @endif
+          </span>
+        </div>
+      @elseif($dokOpd && $dokOpd->status === 'disetujui')
+        <div class="pk-alert ok">
+          <span>✅</span>
+          <span><strong>Dokumen telah disetujui!</strong> Tidak perlu mengupload ulang.</span>
+        </div>
+      @elseif($dokOpd && $dokOpd->status === 'menunggu')
+        <div class="pk-alert warn">
+          <span>⏳</span>
+          <span>Dokumen sudah diupload dan sedang menunggu review dari Admin.</span>
+        </div>
+      @endif
+
+      @if($dokOpd && $dokOpd->status !== 'disetujui')
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+                    border-radius:12px;padding:14px 16px;margin-bottom:18px;
+                    display:flex;align-items:center;gap:12px;">
+          <span style="font-size:22px;">📄</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ $dokOpd->nama_file }}
+            </div>
+            <div style="font-size:11px;color:var(--txt-3);margin-top:2px;">
+              Upload: {{ \Carbon\Carbon::parse($dokOpd->updated_at)->format('d M Y H:i') }}
+              @if(!$opFileExists)
+                &nbsp;·&nbsp;<span style="color:#f87171;">⚠️ File tidak ditemukan</span>
+              @endif
+            </div>
+          </div>
+          @if($opFileExists)
+            <a href="{{ route('perjanjian.lihat', $dokOpd->id) }}" target="_blank" class="btn btn-ghost">
+              👁 Lihat
+            </a>
+          @endif
+        </div>
+      @endif
+
+      @if(!$dokOpd || $dokOpd->status !== 'disetujui')
+        <div class="upload-area">
+          <form method="POST" action="{{ route('perjanjian.upload.dokumen') }}" enctype="multipart/form-data">
+            @csrf
+            <input type="hidden" name="jenis" value="{{ $cfg['opd'] }}">
+            <input type="hidden" name="tahun" value="{{ $tahun }}">
+
+            <div class="pk-field">
+              <label class="pk-label">📁 Pilih File Dokumen <span style="color:#f87171;">*</span></label>
+              <input type="file" name="file" class="pk-input" accept=".pdf,.docx,.xlsx,.doc,.xls" required>
+              <div style="font-size:10px;color:var(--txt-3);margin-top:6px;">Format: PDF, DOC, DOCX, XLS, XLSX — Maksimal 5MB</div>
+            </div>
+
+            <div class="pk-field" style="margin-bottom:20px;">
+              <label class="pk-label">📝 Keterangan <span style="color:var(--txt-3);font-weight:400;">(opsional)</span></label>
+              <input type="text" name="keterangan" class="pk-input"
+                     placeholder="Contoh: Dokumen sudah ditandatangani..."
+                     value="{{ $dokOpd->keterangan ?? '' }}">
+            </div>
+
+            <button type="submit"
+                    style="width:100%;padding:12px;border-radius:12px;border:none;
+                           background:linear-gradient(135deg,#6366f1,#4f46e5);
+                           color:#fff;font-weight:700;font-size:14px;cursor:pointer;
+                           box-shadow:0 4px 14px rgba(99,102,241,.35);transition:opacity .2s;"
+                    onmouseover="this.style.opacity='.85'"
+                    onmouseout="this.style.opacity='1'">
+              📤 {{ $dokOpd ? 'Upload Ulang / Revisi' : 'Upload Dokumen' }}
+            </button>
+          </form>
+        </div>
+      @endif
+    </div>
+  </div>
+@endif
 @endif
 
 {{-- ══════════════════════════════════════════════
-     SECTION: TABEL SEMUA OPD (ADMIN)
+     SECTION: TABEL SEMUA OPD (ADMIN) — jenis non-dual
 ══════════════════════════════════════════════ --}}
-@if(session('user.role') === 'admin')
+@if(session('user.role') === 'admin' && !$isDual)
 
   {{-- Stats --}}
   @if($listOpd->count() > 0)
@@ -783,6 +888,130 @@
       </tbody>
     </table>
   </div>
+@endif
+
+{{-- ══════════════════════════════════════════════
+     SECTION: TABEL SEMUA OPD (ADMIN) — Dual (Murni & Revisi)
+══════════════════════════════════════════════ --}}
+@if(session('user.role') === 'admin' && $isDual)
+<div class="pk-table-wrap">
+  <table class="pk-table">
+    <thead>
+      <tr>
+        <th>OPD / Operator</th>
+        <th>Perjanjian Kinerja Murni</th>
+        <th>Status Murni</th>
+        <th>Perjanjian Kinerja Revisi</th>
+        <th>Status Revisi</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      @forelse($listOpdDual as $opdIdKey => $files)
+        @php
+          $murni  = $files->first(fn($f) => $f->sub_jenis === 'murni' || is_null($f->sub_jenis));
+          $revisi = $files->first(fn($f) => $f->sub_jenis === 'revisi');
+          $namaOpdRow = $murni->nama_opd ?? $revisi->nama_opd ?? '—';
+        @endphp
+        <tr>
+          <td>
+            <div style="font-weight:600;color:var(--txt-1);">{{ $namaOpdRow }}</div>
+            <div style="font-size:11px;color:var(--txt-3);">{{ $murni->nama_user ?? $revisi->nama_user ?? '—' }}</div>
+          </td>
+
+          <td>
+            @if($murni)
+              <div style="font-size:12px;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">{{ $murni->nama_file }}</div>
+              <div style="font-size:10px;color:var(--txt-3);">{{ \Carbon\Carbon::parse($murni->updated_at)->format('d/m/Y H:i') }}</div>
+              @if(!$murni->file_exists)<span style="color:#f87171;font-size:10px;">⚠️ File tidak ada</span>@endif
+            @else
+              <span style="color:var(--txt-3);">Belum upload</span>
+            @endif
+          </td>
+          <td>
+            @if($murni)
+              @if($murni->status === 'disetujui') <span class="badge badge-ok">✓ Disetujui</span>
+              @elseif($murni->status === 'ditolak') <span class="badge badge-err">✗ Revisi</span>
+              @else <span class="badge badge-warn">⏳ Menunggu</span> @endif
+            @else <span class="badge badge-neutral">—</span> @endif
+          </td>
+
+          <td>
+            @if($revisi)
+              <div style="font-size:12px;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">{{ $revisi->nama_file }}</div>
+              <div style="font-size:10px;color:var(--txt-3);">{{ \Carbon\Carbon::parse($revisi->updated_at)->format('d/m/Y H:i') }}</div>
+              @if(!$revisi->file_exists)<span style="color:#f87171;font-size:10px;">⚠️ File tidak ada</span>@endif
+            @else
+              <span style="color:var(--txt-3);">Belum upload</span>
+            @endif
+          </td>
+          <td>
+            @if($revisi)
+              @if($revisi->status === 'disetujui') <span class="badge badge-ok">✓ Disetujui</span>
+              @elseif($revisi->status === 'ditolak') <span class="badge badge-err">✗ Revisi</span>
+              @else <span class="badge badge-warn">⏳ Menunggu</span> @endif
+            @else <span class="badge badge-neutral">—</span> @endif
+          </td>
+
+          <td>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              @if($murni)
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <span style="font-size:9px;color:var(--txt-3);">Murni:</span>
+                  @if($murni->file_exists)
+                    <a href="{{ route('perjanjian.preview', $murni->id) }}" target="_blank" class="btn btn-ghost" style="padding:3px 8px;font-size:10px;">👁</a>
+                  @endif
+                  @if($murni->status !== 'disetujui')
+                    <form method="POST" action="{{ route('perjanjian.review', $murni->id) }}" style="display:inline;">
+                      @csrf<input type="hidden" name="status" value="disetujui"><input type="hidden" name="catatan" value="">
+                      <button type="submit" class="btn btn-ok" style="padding:3px 8px;font-size:10px;">✓</button>
+                    </form>
+                  @endif
+                  @if($murni->status !== 'ditolak')
+                    <form method="POST" action="{{ route('perjanjian.review', $murni->id) }}" style="display:inline;">
+                      @csrf<input type="hidden" name="status" value="ditolak"><input type="hidden" name="catatan" value="">
+                      <button type="submit" class="btn btn-err" style="padding:3px 8px;font-size:10px;">✗</button>
+                    </form>
+                  @endif
+                </div>
+              @endif
+              @if($revisi)
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <span style="font-size:9px;color:var(--txt-3);">Revisi:</span>
+                  @if($revisi->file_exists)
+                    <a href="{{ route('perjanjian.preview', $revisi->id) }}" target="_blank" class="btn btn-ghost" style="padding:3px 8px;font-size:10px;">👁</a>
+                  @endif
+                  @if($revisi->status !== 'disetujui')
+                    <form method="POST" action="{{ route('perjanjian.review', $revisi->id) }}" style="display:inline;">
+                      @csrf<input type="hidden" name="status" value="disetujui"><input type="hidden" name="catatan" value="">
+                      <button type="submit" class="btn btn-ok" style="padding:3px 8px;font-size:10px;">✓</button>
+                    </form>
+                  @endif
+                  @if($revisi->status !== 'ditolak')
+                    <form method="POST" action="{{ route('perjanjian.review', $revisi->id) }}" style="display:inline;">
+                      @csrf<input type="hidden" name="status" value="ditolak"><input type="hidden" name="catatan" value="">
+                      <button type="submit" class="btn btn-err" style="padding:3px 8px;font-size:10px;">✗</button>
+                    </form>
+                  @endif
+                </div>
+              @endif
+            </div>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div style="font-size:44px;margin-bottom:14px;opacity:.3;">📂</div>
+              <div style="font-size:15px;font-weight:600;color:var(--txt-1);margin-bottom:6px;">Belum ada dokumen</div>
+              <div style="font-size:12px;color:var(--txt-3);">Operator belum mengupload dokumen untuk tahun {{ $tahun }}</div>
+            </div>
+          </td>
+        </tr>
+      @endforelse
+    </tbody>
+  </table>
+</div>
 @endif
 
 

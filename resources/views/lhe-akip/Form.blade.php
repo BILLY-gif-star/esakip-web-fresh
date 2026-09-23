@@ -144,19 +144,20 @@
   ══════════════════════════════════════════════════ --}}
   @php
     $komponenList = [
-      'perencanaan'        => 'Perencanaan Kinerja',
-      'pengukuran'         => 'Pengukuran Kinerja',
-      'pelaporan'          => 'Pelaporan Kinerja',
-      'evaluasi_internal'  => 'Evaluasi Akuntabilitas Kinerja Internal',
+      ['key' => 'perencanaan',       'label' => 'Perencanaan Kinerja'],
+      ['key' => 'pengukuran',        'label' => 'Pengukuran Kinerja'],
+      ['key' => 'pelaporan',         'label' => 'Pelaporan Kinerja'],
+      ['key' => 'evaluasi_internal', 'label' => 'Evaluasi Akuntabilitas Kinerja Internal'],
     ];
   @endphp
 
-  @foreach($komponenList as $key => $label)
+  @foreach($komponenList as $idx => $item)
+    @php [$key, $label] = [$item['key'], $item['label']]; @endphp
     <div class="card">
       <div class="card-header">
         <div>
           <div class="card-title">📝 {{ $label }}</div>
-          <div class="card-subtitle">Uraian naratif dan poin catatan perbaikan (untuk surat, bukan nilai)</div>
+          <div class="card-subtitle">Uraian naratif manual + catatan perbaikan otomatis dari komentar Evaluator</div>
         </div>
       </div>
       <div class="card-body">
@@ -168,9 +169,10 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Poin Catatan Perbaikan (satu poin per baris)</label>
-          <textarea name="catatan_{{ $key }}" class="form-control" rows="4"
-                    placeholder="Contoh:&#10;Cascading kinerja belum disusun sesuai kaidah...&#10;Belum crosscutting kinerja...">{{ old('catatan_' . $key, is_array($lhe->{'catatan_' . $key}) ? implode("\n", $lhe->{'catatan_' . $key}) : '') }}</textarea>
+          <label class="form-label">Poin Catatan Perbaikan <span style="color:var(--text-light);font-weight:400;">(otomatis dari komentar Evaluator — tidak bisa diedit di sini)</span></label>
+          <div class="form-control" style="min-height:60px;background:var(--bg-hover);cursor:default;" id="catatan_preview_{{ $idx }}">
+            <span style="color:var(--text-light);font-size:12px;">Klik "Muat Nilai dari Hasil Evaluasi" di atas untuk memuat catatan.</span>
+          </div>
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
@@ -257,6 +259,19 @@ function tampilkanNilai(data) {
   document.getElementById('preview-kategori').textContent = data.kategori;
   document.getElementById('cardNilai').style.display = '';
   document.getElementById('alertBelumAdaData').style.display = data.ada_data ? 'none' : 'block';
+
+  // Isi preview catatan otomatis per komponen (index 0..3, selaras urutan rincian)
+  (data.catatan || []).forEach(function(poinList, idx) {
+    var box = document.getElementById('catatan_preview_' + idx);
+    if (!box) return;
+    if (poinList.length === 0) {
+      box.innerHTML = '<span style="color:var(--text-light);font-size:12px;">Belum ada komentar dari Evaluator untuk komponen ini.</span>';
+    } else {
+      box.innerHTML = '<ul style="margin:0;padding-left:18px;">' +
+        poinList.map(function(p) { return '<li style="font-size:12.5px;margin-bottom:4px;">' + p + '</li>'; }).join('') +
+        '</ul>';
+    }
+  });
 }
 
 function muatNilai() {
