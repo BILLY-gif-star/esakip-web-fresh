@@ -190,13 +190,15 @@ public function index(Request $request)
         $predikat = $this->getPredikat($nilaiAkhir);
     }
 
+    $periodeLke = $this->cekPeriodeLke($tahun);
     return view('lke.index', compact(
         'user', 'tahun', 'opdId', 'listOpd', 'listTahun',
         'komponenUtama', 'subKomponen', 'kriteriaPerKomponen',
         'nilaiPerSubKomponen', 'nilaiKomponenUtama',
         'nilaiSubKomponen', 'catatanPerKriteria', 'dokumenPerKriteria',
         'nilaiAkhir', 'predikat',
-        'nilaiOperatorPerSubKomponen', 'nilaiKomponenUtamaOperator', 'nilaiAkhirOperator' // ⭐ BARU
+        'nilaiOperatorPerSubKomponen', 'nilaiKomponenUtamaOperator', 'nilaiAkhirOperator',
+        'periodeLke'
     ));
 }
 
@@ -209,6 +211,12 @@ public function simpan(Request $request)
     $tahun = (int) $request->input('tahun', $this->tahunEvaluasi());
 
     $opdId = $user['role'] === 'operator' ? $user['daerah_id'] : $request->input('opd_id');
+     if ($user['role'] === 'operator') {
+        $periode = $this->cekPeriodeLke($tahun);
+        if (!$periode['terbuka']) {
+            return back()->with('error', $periode['pesan']);
+        }
+    }
 
     if (!$opdId) {
         return back()->with('error', 'Pilih OPD terlebih dahulu.');
@@ -529,7 +537,12 @@ public function simpanNilai(Request $request)
     public function uploadDokumen(Request $request)
     {
         $user = Session::get('user');
-
+        if ($user['role'] === 'operator') {
+        $periode = $this->cekPeriodeLke((int) $request->tahun);
+        if (!$periode['terbuka']) {
+            return response()->json(['ok' => false, 'message' => $periode['pesan']], 403);
+        }
+    }
         $request->validate([
             'kriteria_id' => 'required|integer',
             'tahun'       => 'required|integer',
@@ -661,6 +674,12 @@ public function simpanNilai(Request $request)
         if ($user['role'] === 'operator' && $doc->perangkat_daerah_id != $user['daerah_id']) {
             return response()->json(['ok' => false, 'message' => 'Akses ditolak.'], 403);
         }
+         if ($user['role'] === 'operator') {
+        $periode = $this->cekPeriodeLke((int) $doc->tahun);
+        if (!$periode['terbuka']) {
+            return response()->json(['ok' => false, 'message' => $periode['pesan']], 403);
+        }
+    }
 
         $path = $this->cariFileLke($doc->nama_file);
         if ($path) {
@@ -1013,5 +1032,50 @@ $this->tulisLembarLkeKeSheet(
         if ($nilai >= 30) return ['kode' => 'C',  'label' => 'C — Kurang',            'color' => '#dc2626'];
         if ($nilai >  0)  return ['kode' => 'D',  'label' => 'D — Sangat Kurang',     'color' => '#991b1b'];
         return                   ['kode' => 'E',  'label' => 'E — Tidak Ada Upaya',   'color' => '#6b7280'];
+    }
+
+        // ════════════════════════════════════════════════════
+    //  HELPER — cek apakah periode pengisian LKE (operator) masih terbuka
+    // ════════════════════════════════════════════════════
+    private function cekPeriodeLke(int $tahun): array
+    {
+        $periode = DB::table('lke_periode')->where('tahun', $tahun)->first();
+
+        // Belum diatur admin sama sekali → dianggap TERBUKA (default aman, tidak mengunci tiba-tiba)
+        if (!$periode) {
+            return ['terbuka' => true, 'pesan' => null];
+        }
+
+        if ($periode->status_manual === 'ditutup_paksa') {
+            return [
+                'terbuka' => false,
+                'pesan'   => $periode->keterangan ?: 'Periode pengisian LKE AKIP tahun ' . $tahun . ' telah ditutup oleh admin.',
+            ];
+        }
+
+        if ($periode->status_manual === 'dibuka_paksa') {
+            return ['terbuka' => true, 'pesan' => null];
+        }
+
+        // status_manual === 'otomatis' → cek berdasarkan tanggal
+        $now = now();
+
+        if ($periode->tanggal_mulai && $now->lt($periode->tanggal_mulai)) {
+            return [
+                'terbuka' => false,
+                'pesan'   => 'Periode pengisian LKE AKIP tahun ' . $tahun . ' belum dibuka. Dibuka mulai ' .
+                             \Carbon\Carbon::parse($periode->tanggal_mulai)->translatedFormat('d F Y H:i') . '.',
+            ];
+        }
+
+        if ($periode->tanggal_selesai && $now->gt($periode->tanggal_selesai)) {
+            return [
+                'terbuka' => false,
+                'pesan'   => 'Periode pengisian LKE AKIP tahun ' . $tahun . ' telah berakhir pada ' .
+                             \Carbon\Carbon::parse($periode->tanggal_selesai)->translatedFormat('d F Y H:i') . '.',
+            ];
+        }
+
+        return ['terbuka' => true, 'pesan' => null];
     }
 }

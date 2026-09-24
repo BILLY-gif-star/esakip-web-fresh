@@ -642,7 +642,11 @@
   ];
 @endphp
 
-@if($isOperator)
+@if($isOperator && !$periodeLke['terbuka'])
+<div class="dk-alert warn">
+  <span>🔒 <strong>Periode pengisian telah ditutup.</strong> {{ $periodeLke['pesan'] }}</span>
+</div>
+@elseif($isOperator)
 <div class="dk-alert info">
   <span>📝 Ini adalah <strong>lembar kerja Anda sendiri</strong>. Isi Jawaban (Predikat), Catatan, Evidence, dan upload dokumen pendukung. Nilai ini akan direview oleh Evaluator untuk ditetapkan sebagai nilai resmi.</span>
 </div>
@@ -674,14 +678,13 @@
         'nilaiAkhirX'         => $nilaiAkhir,
     ])
   </div>
-
   {{-- ═══════════════════════════════════════════════════ --}}
   {{-- PANEL 2: LEMBAR OPERATOR                           --}}
   {{-- ═══════════════════════════════════════════════════ --}}
   <div class="lke-tab-panel {{ $defaultTab === 'operator' ? 'active' : '' }}" id="panelOperator">
     @include('lke.partials.tabel-nilai', [
         'mode'                => 'operator',
-        'editable'            => $isOperator,
+        'editable'            => $isOperator && $periodeLke['terbuka'],
         'judulLembar'         => 'Lembar Kerja Operator (Nilai Asli)',
         'nilaiPerSubX'        => $nilaiOperatorPerSubKomponen,
         'nilaiKomponenUtamaX' => $nilaiKomponenUtamaOperator,
@@ -702,8 +705,12 @@
     </div>
     <div style="display:flex;gap:10px;">
       <a href="{{ route('evaluasi.lke.rekap') }}?tahun={{ $tahun }}" class="btn btn-ghost">📊 Rekap</a>
-      @if($isOperator || $isEvaluator)
+           @if($isEvaluator)
       <button type="submit" form="formLke" class="btn btn-ok" style="padding:10px 22px;font-size:13px;">💾 Simpan</button>
+      @elseif($isOperator && $periodeLke['terbuka'])
+      <button type="submit" form="formLke" class="btn btn-ok" style="padding:10px 22px;font-size:13px;">💾 Simpan</button>
+      @elseif($isOperator)
+      <span class="btn btn-ghost" style="padding:10px 22px;font-size:13px;opacity:.5;cursor:not-allowed;">🔒 Periode Ditutup</span>
       @endif
     </div>
   </div>

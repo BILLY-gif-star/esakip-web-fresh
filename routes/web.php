@@ -1,5 +1,6 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\AuthController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\PerjanjianCascadingController;
 use App\Http\Controllers\PerjanjianTemplateController;
 use App\Http\Controllers\PerjanjianDokumenController;
 use App\Http\Controllers\LheAkipController;
+use App\Http\Controllers\LheDokumenController;
 
 
 Route::get('/debug-env', function () {
@@ -190,6 +192,12 @@ Route::middleware('auth.esakip')->group(function () {
         Route::delete('/lke/dokumen/{id}', [LkeController::class, 'hapusDokumen'])->name('lke.hapus.dokumen');
         Route::post('/lke/dokumen/{id}',   [LkeController::class, 'hapusDokumen']);   
         Route::get('/lke/export-excel', [LkeController::class, 'exportExcel'])->name('lke.export');
+            // LHE Dokumen
+        Route::get('/lhe-dokumen',            [LheDokumenController::class, 'index'])->name('lhe-dokumen');
+        Route::post('/lhe-dokumen/upload',    [LheDokumenController::class, 'upload'])->name('lhe-dokumen.upload');
+        Route::get('/lhe-dokumen/{id}/lihat', [LheDokumenController::class, 'lihat'])->name('lhe-dokumen.lihat');
+        Route::get('/lhe-dokumen/{id}/unduh', [LheDokumenController::class, 'unduh'])->name('lhe-dokumen.unduh');
+        Route::delete('/lhe-dokumen/{id}',    [LheDokumenController::class, 'hapus'])->name('lhe-dokumen.hapus');
     });
 
     // ════════════════════════════════════════════════════════
@@ -310,6 +318,11 @@ Route::middleware('auth.esakip')->group(function () {
         Route::get('/evaluator/{id}/assign-opd',   [AdminController::class, 'assignOpdEvaluator'])->name('evaluator.assign-opd');
         Route::post('/evaluator/{id}/assign-opd',  [AdminController::class, 'storeAssignOpdEvaluator'])->name('evaluator.store-assign-opd');
         Route::get('/evaluator/{id}/assigned-opd', [AdminController::class, 'getAssignedOpdEvaluator'])->name('evaluator.assigned-opd');
+
+
+                // ── Periode Pengisian LKE ──────────────────────────────
+        Route::get('/periode-lke',   [AdminController::class, 'periodeLke'])->name('periode-lke');
+        Route::post('/periode-lke',  [AdminController::class, 'simpanPeriodeLke'])->name('periode-lke.simpan');
     });
 
     

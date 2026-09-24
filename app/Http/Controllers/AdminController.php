@@ -669,4 +669,159 @@ public function getAssignedOpdEvaluator($id)
 
         return response()->json($opd);
     }
+
+        // ════════════════════════════════════════════════════════════
+    //  PERIODE PENGISIAN LKE AKIP
+    // ════════════════════════════════════════════════════════════
+
+    public function periodeLke(Request $request)
+    {
+        $user = Session::get('user');
+
+        if ($user['role'] !== 'admin') {
+            return redirect()->route('dashboard')->with('error', 'Akses ditolak.');
+        }
+
+        $tahun = (int) $request->input('tahun', date('Y'));
+
+        $periode = DB::table('lke_periode')->where('tahun', $tahun)->first();
+
+        $daftarPeriode = DB::table('lke_periode as lp')
+            ->leftJoin('pengguna as p', 'lp.updated_by', '=', 'p.id')
+            ->select('lp.*', 'p.nama as nama_updater')
+            ->orderByDesc('lp.tahun')
+            ->get();
+
+        $listTahun = range(date('Y') + 1, date('Y') - 5);
+
+        return view('admin.periode-lke', compact('user', 'tahun', 'periode', 'daftarPeriode', 'listTahun'));
+    }
+
+    public function simpanPeriodeLke(Request $request)
+    {
+        $user = Session::get('user');
+
+        if ($user['role'] !== 'admin') {
+            return back()->with('error', 'Akses ditolak.');
+        }
+
+        $request->validate([
+            'tahun'           => 'required|integer',
+            'tanggal_mulai'   => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date',
+            'status_manual'   => 'required|in:otomatis,dibuka_paksa,ditutup_paksa',
+            'keterangan'      => 'nullable|string|max:255',
+        ]);
+
+        $tahun = (int) $request->tahun;
+
+        // ⭐ Status SEBELUM disimpan (untuk deteksi perubahan)
+        $statusSebelum = $this->hitungStatusPeriode($tahun);
+
+        $payload = [
+            'tanggal_mulai'   => $request->tanggal_mulai ?: null,
+            'tanggal_selesai' => $request->tanggal_selesai ?: null,
+            'status_manual'   => $request->status_manual,
+            'keterangan'      => $request->keterangan ?: null,
+            'updated_by'      => $user['id'],
+            'updated_at'      => now(),
+        ];
+
+        $existing = DB::table('lke_periode')->where('tahun', $tahun)->first();
+
+        if ($existing) {
+            DB::table('lke_periode')->where('id', $existing->id)->update($payload);
+        } else {
+            DB::table('lke_periode')->insert(array_merge($payload, [
+                'tahun'      => $tahun,
+                'created_at' => now(),
+            ]));
+        }
+
+        // ⭐ Status SESUDAH disimpan
+        $statusSesudah = $this->hitungStatusPeriode($tahun);
+
+        // ⭐ Kirim notifikasi ke operator HANYA jika statusnya benar-benar berubah
+        if ($statusSebelum !== $statusSesudah) {
+            $this->notifikasiPerubahanPeriodeLke($tahun, $statusSesudah, $request->keterangan);
+        }
+
+        return back()->with('success', 'Periode LKE AKIP tahun ' . $tahun . ' berhasil disimpan.');
+    }
+
+    /**
+     * Hitung status efektif periode (terbuka/tertutup) untuk tahun tertentu.
+     * Logic ini SENGAJA disamakan persis dengan LkeController::cekPeriodeLke()
+     * supaya deteksi perubahan status akurat dan konsisten dengan yang
+     * benar-benar dialami operator.
+     */
+    private function hitungStatusPeriode(int $tahun): string
+    {
+        $periode = DB::table('lke_periode')->where('tahun', $tahun)->first();
+
+        if (!$periode) {
+            return 'terbuka'; // default aman, sama seperti LkeController
+        }
+
+        if ($periode->status_manual === 'ditutup_paksa') {
+            return 'tertutup';
+        }
+
+        if ($periode->status_manual === 'dibuka_paksa') {
+            return 'terbuka';
+        }
+
+        $now = now();
+
+        if ($periode->tanggal_mulai && $now->lt($periode->tanggal_mulai)) {
+            return 'tertutup';
+        }
+
+        if ($periode->tanggal_selesai && $now->gt($periode->tanggal_selesai)) {
+            return 'tertutup';
+        }
+
+        return 'terbuka';
+    }
+
+    /**
+     * Kirim notifikasi ke semua operator aktif saat status periode LKE berubah.
+     */
+    private function notifikasiPerubahanPeriodeLke(int $tahun, string $statusBaru, ?string $keterangan): void
+    {
+        $operators = DB::table('pengguna')
+            ->where('role', 'operator')
+            ->where('is_active', 1)
+            ->get();
+
+        if ($statusBaru === 'terbuka') {
+            $judul = '🔓 Periode Pengisian LKE AKIP Dibuka';
+            $pesan = "Periode pengisian LKE AKIP tahun {$tahun} telah dibuka oleh admin. Silakan lengkapi penilaian mandiri Anda.";
+            $ikon  = '🔓';
+            $warna = 'green';
+        } else {
+            $judul = '🔒 Periode Pengisian LKE AKIP Ditutup';
+            $pesan = "Periode pengisian LKE AKIP tahun {$tahun} telah ditutup oleh admin. Anda tidak dapat lagi mengubah data.";
+            $ikon  = '🔒';
+            $warna = 'red';
+        }
+
+        if ($keterangan) {
+            $pesan .= " Catatan: {$keterangan}";
+        }
+
+        foreach ($operators as $op) {
+            DB::table('notifikasi')->insert([
+                'user_id'    => $op->id,
+                'judul'      => $judul,
+                'pesan'      => $pesan,
+                'tipe'       => 'lke_periode',
+                'ikon'       => $ikon,
+                'warna'      => $warna,
+                'url'        => route('evaluasi.lke', ['tahun' => $tahun]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    }
 }

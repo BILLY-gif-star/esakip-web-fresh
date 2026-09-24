@@ -21,6 +21,7 @@ class LheAkip extends Model
         'uraian_pengukuran',
         'uraian_pelaporan',
         'uraian_evaluasi_internal',
+        'catatan_terpilih', 
         'catatan_perencanaan',
         'catatan_pengukuran',
         'catatan_pelaporan',
@@ -44,6 +45,7 @@ class LheAkip extends Model
         'catatan_pengukuran'        => 'array',
         'catatan_pelaporan'         => 'array',
         'catatan_evaluasi_internal' => 'array',
+        'catatan_terpilih'          => 'array',
         'rekomendasi'               => 'array',
     ];
 
@@ -153,7 +155,7 @@ class LheAkip extends Model
      * masing-masing berisi list string poin catatan.
      * ══════════════════════════════════════════════════════════
      */
-    public static function hitungCatatan(int $perangkatDaerahId, int $tahun): array
+     public static function hitungCatatan(int $perangkatDaerahId, int $tahun): array
     {
         $komponenUtama = DB::table('lke_komponen')
             ->whereNull('parent_id')
@@ -168,7 +170,7 @@ class LheAkip extends Model
             ->whereNotNull('lpc.komentar_admin')
             ->where('lpc.komentar_admin', '!=', '')
             ->orderBy('lk.nomor')
-            ->select('lpc.komentar_admin', 'lk.nomor', 'sub.parent_id as induk_id')
+            ->select('lpc.kriteria_id', 'lpc.komentar_admin', 'lk.nomor', 'sub.parent_id as induk_id')
             ->get()
             ->groupBy('induk_id');
 
@@ -176,11 +178,34 @@ class LheAkip extends Model
         foreach ($komponenUtama as $idx => $k) {
             $poin = [];
             foreach (($rows[$k->id] ?? []) as $r) {
-                $poin[] = 'Kriteria ' . $r->nomor . ': ' . $r->komentar_admin;
+                $poin[] = [
+                    'id'   => $r->kriteria_id,
+                    'text' => 'Kriteria ' . $r->nomor . ': ' . $r->komentar_admin,
+                ];
             }
             $hasil[$idx] = $poin;
         }
 
+        return $hasil;
+    }
+
+    public function catatanTerpilihUntukCetak(): array
+    {
+        $detail   = self::hitungCatatan($this->perangkat_daerah_id, $this->tahun_evaluasi);
+        $terpilih = $this->catatan_terpilih;
+
+        $hasil = [];
+        foreach ($detail as $idx => $list) {
+            if ($terpilih === null || !array_key_exists($idx, $terpilih)) {
+                $hasil[$idx] = array_map(fn($c) => $c['text'], $list);
+            } else {
+                $ids = $terpilih[$idx];
+                $hasil[$idx] = array_values(array_map(
+                    fn($c) => $c['text'],
+                    array_filter($list, fn($c) => in_array($c['id'], $ids))
+                ));
+            }
+        }
         return $hasil;
     }
 

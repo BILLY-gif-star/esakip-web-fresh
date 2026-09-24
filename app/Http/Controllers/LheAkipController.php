@@ -85,31 +85,20 @@ class LheAkipController extends Controller
         return response()->json($nilai);
     }
 
-public function store(Request $request)
-{
-    $validated = $this->validasi($request);
+    public function store(Request $request)
+    {
+        $validated = $this->validasi($request);
+        $validated = $this->prosesArrayInput($request, $validated);
+        $validated['catatan_terpilih'] = $this->prosesCatatanTerpilih($request); // ⭐ BARU
 
-    // ⭐ Cek duplikat sebelum insert — hindari 500 error mentah
-    $sudahAda = LheAkip::where('perangkat_daerah_id', $validated['perangkat_daerah_id'])
-        ->where('tahun_evaluasi', $validated['tahun_evaluasi'])
-        ->first();
+        $validated['created_by'] = session('user.id');
 
-    if ($sudahAda) {
+        LheAkip::create($validated);
+
         return redirect()
-            ->route('lhe-akip.edit', $sudahAda->id)
-            ->with('error', 'LHE AKIP untuk OPD dan tahun ini sudah pernah dibuat. Silakan edit data yang sudah ada.');
+            ->route('lhe-akip.index', ['tahun' => $validated['tahun_evaluasi']])
+            ->with('success', 'LHE AKIP berhasil disimpan.');
     }
-
-    $validated = $this->prosesArrayInput($request, $validated);
-
-    $validated['created_by'] = session('user.id');
-
-    LheAkip::create($validated);
-
-    return redirect()
-        ->route('lhe-akip.index', ['tahun' => $validated['tahun_evaluasi']])
-        ->with('success', 'LHE AKIP berhasil disimpan.');
-}
 
     public function edit(LheAkip $lhe)
     {
@@ -133,10 +122,11 @@ public function store(Request $request)
         ]);
     }
 
-    public function update(Request $request, LheAkip $lhe)
+       public function update(Request $request, LheAkip $lhe)
     {
         $validated = $this->validasi($request);
         $validated = $this->prosesArrayInput($request, $validated);
+        $validated['catatan_terpilih'] = $this->prosesCatatanTerpilih($request); // ⭐ BARU
 
         $validated['updated_by'] = session('user.id');
 
@@ -159,11 +149,11 @@ public function store(Request $request)
      * Nilai (dari lke_penilaian) & catatan (dari komentar Evaluator
      * di lke_penilaian_kriteria) diambil LIVE saat dicetak.
      */
-    public function cetak(LheAkip $lhe)
+     public function cetak(LheAkip $lhe)
     {
         $opd   = DB::table('perangkat_daerah')->where('id', $lhe->perangkat_daerah_id)->first();
         $nilai = LheAkip::hitungNilai($lhe->perangkat_daerah_id, $lhe->tahun_evaluasi);
-        $nilai['catatan'] = LheAkip::hitungCatatan($lhe->perangkat_daerah_id, $lhe->tahun_evaluasi);
+        $nilai['catatan'] = $lhe->catatanTerpilihUntukCetak(); // ⭐ DIUBAH
 
         return view('lhe-akip.cetak', compact('lhe', 'opd', 'nilai'));
     }
@@ -188,6 +178,8 @@ public function store(Request $request)
             'uraian_pelaporan'         => 'nullable|string',
             'uraian_evaluasi_internal' => 'nullable|string',
 
+            'catatan_pilih' => 'nullable|array',
+
             'penutup' => 'nullable|string',
 
             'nama_penandatangan'    => 'nullable|string|max:255',
@@ -198,6 +190,18 @@ public function store(Request $request)
             'status' => 'required|in:draft,final',
         ]);
     }
+
+     private function prosesCatatanTerpilih(Request $request): array
+    {
+        $raw = $request->input('catatan_pilih', []);
+
+        $hasil = [];
+        foreach (range(0, 3) as $idx) {
+            $hasil[$idx] = array_map('intval', (array) ($raw[$idx] ?? []));
+        }
+        return $hasil;
+    }
+
 
     /**
      * Poin rekomendasi (textarea per-baris) → array/JSON.

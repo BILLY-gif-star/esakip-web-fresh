@@ -169,8 +169,8 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Poin Catatan Perbaikan <span style="color:var(--text-light);font-weight:400;">(otomatis dari komentar Evaluator — tidak bisa diedit di sini)</span></label>
-          <div class="form-control" style="min-height:60px;background:var(--bg-hover);cursor:default;" id="catatan_preview_{{ $idx }}">
+          <label class="form-label">Poin Catatan Perbaikan <span style="color:var(--text-light);font-weight:400;">(otomatis dari komentar Evaluator — centang yang ingin ditampilkan saat cetak)</span></label>
+          <div class="form-control" style="min-height:60px;background:var(--bg-hover);" id="catatan_preview_{{ $idx }}">
             <span style="color:var(--text-light);font-size:12px;">Klik "Muat Nilai dari Hasil Evaluasi" di atas untuk memuat catatan.</span>
           </div>
         </div>
@@ -248,6 +248,15 @@
 @section('scripts')
 <script>
 const NILAI_PREVIEW_URL = '{{ route("lhe-akip.nilai-preview") }}';
+const CATATAN_TERPILIH_LAMA = @json($lhe->catatan_terpilih ?? null); // ⭐ BARU
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 function tampilkanNilai(data) {
   var tbody = document.getElementById('tbodyNilai');
@@ -260,17 +269,28 @@ function tampilkanNilai(data) {
   document.getElementById('cardNilai').style.display = '';
   document.getElementById('alertBelumAdaData').style.display = data.ada_data ? 'none' : 'block';
 
-  // Isi preview catatan otomatis per komponen (index 0..3, selaras urutan rincian)
+  // ⭐ DIUBAH — render sebagai checkbox, bukan list statis
   (data.catatan || []).forEach(function(poinList, idx) {
     var box = document.getElementById('catatan_preview_' + idx);
     if (!box) return;
-    if (poinList.length === 0) {
+
+    if (!poinList.length) {
       box.innerHTML = '<span style="color:var(--text-light);font-size:12px;">Belum ada komentar dari Evaluator untuk komponen ini.</span>';
-    } else {
-      box.innerHTML = '<ul style="margin:0;padding-left:18px;">' +
-        poinList.map(function(p) { return '<li style="font-size:12.5px;margin-bottom:4px;">' + p + '</li>'; }).join('') +
-        '</ul>';
+      return;
     }
+
+    // idx belum pernah diatur sebelumnya → default semua tercentang
+    var idsTerpilih = (CATATAN_TERPILIH_LAMA && CATATAN_TERPILIH_LAMA[idx])
+      ? CATATAN_TERPILIH_LAMA[idx].map(String)
+      : null;
+
+    box.innerHTML = poinList.map(function(p) {
+      var checked = idsTerpilih === null ? true : idsTerpilih.indexOf(String(p.id)) !== -1;
+      return '<label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;margin-bottom:6px;cursor:pointer;">' +
+             '<input type="checkbox" name="catatan_pilih[' + idx + '][]" value="' + p.id + '"' + (checked ? ' checked' : '') + ' style="margin-top:2px;flex-shrink:0;">' +
+             '<span>' + escapeHtml(p.text) + '</span>' +
+             '</label>';
+    }).join('');
   });
 }
 

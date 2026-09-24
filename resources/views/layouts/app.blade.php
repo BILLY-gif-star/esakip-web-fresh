@@ -1502,6 +1502,7 @@ tbody tr:hover td {
         <a href="{{ route('evaluasi.juknis') }}" class="nav-sub {{ request()->routeIs('evaluasi.juknis') ? 'active' : '' }}">Juknis</a>
         <a href="{{ route('evaluasi.lke') }}"    class="nav-sub {{ request()->routeIs('evaluasi.lke') ? 'active' : '' }}">LKE AKIP</a>
         <a href="{{ route('lhe-akip.index') }}"  class="nav-sub {{ request()->routeIs('lhe-akip.*') ? 'active' : '' }}">LHE AKIP</a>
+        <a href="{{ route('evaluasi.lhe-dokumen') }}" class="nav-sub {{ request()->routeIs('evaluasi.lhe-dokumen*') ? 'active' : '' }}">LHE Dokumen</a>
         <a href="{{ route('rekapan.hasil') }}"   class="nav-sub {{ request()->routeIs('rekapan.hasil*') ? 'active' : '' }}">Rekapan Hasil LKE AKIP</a>
       </div>
 
@@ -1530,6 +1531,11 @@ tbody tr:hover td {
       <a href="{{ route('admin.klaster') }}" class="nav-item {{ request()->routeIs('admin.klaster*') ? 'active' : '' }}">
         <span class="nav-icon">🏷️</span>
         <span class="nav-label">Kelola Klaster </span>
+      </a>
+
+      <a href="{{ route('admin.periode-lke') }}" class="nav-item {{ request()->routeIs('admin.periode-lke*') ? 'active' : '' }}">
+        <span class="nav-icon">⏱️</span>
+        <span class="nav-label">Periode LKE AKIP</span>
       </a>
 
       <a href="{{ route('admin.arsip') }}" class="nav-item {{ request()->routeIs('admin.arsip*') ? 'active' : '' }}">
@@ -1585,6 +1591,7 @@ tbody tr:hover td {
       <div class="nav-group-body {{ request()->is('evaluasi/*') ? 'open' : '' }}" id="grpEvaluasi">
         <a href="{{ route('evaluasi.juknis') }}" class="nav-sub {{ request()->routeIs('evaluasi.juknis') ? 'active' : '' }}">Juknis</a>
         <a href="{{ route('evaluasi.lke') }}"    class="nav-sub {{ request()->routeIs('evaluasi.lke') ? 'active' : '' }}">LKE AKIP</a>
+        <a href="{{ route('evaluasi.lhe-dokumen') }}" class="nav-sub {{ request()->routeIs('evaluasi.lhe-dokumen*') ? 'active' : '' }}">LHE Dokumen</a>
       </div>
 
     @endif
