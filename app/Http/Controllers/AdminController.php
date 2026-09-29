@@ -14,6 +14,16 @@ class AdminController extends Controller
     //  MANAJEMEN PENGGUNA
     // ════════════════════════════════════════════════════════════
 
+    /** Jumlah admin aktif SELAIN user tertentu */
+    private function adminAktifLain($exceptId): int
+    {
+        return DB::table('pengguna')
+            ->where('role', 'admin')
+            ->where('is_active', 1)
+            ->where('id', '!=', $exceptId)
+            ->count();
+    }
+
     /**
      * Menampilkan daftar semua pengguna
      */
@@ -79,7 +89,7 @@ class AdminController extends Controller
         $request->validate([
             'username' => 'required|string|max:100|unique:pengguna,username',
             'nama' => 'required|string|max:200',
-            'role' => 'required|in:evaluator,operator',
+            'role' => 'required|in:admin,evaluator,operator',
             'perangkat_daerah_id' => 'required_if:role,operator|nullable|exists:perangkat_daerah,id',
             'password' => 'required|string|min:6',
         ]);
@@ -105,28 +115,52 @@ class AdminController extends Controller
     public function updateUser(Request $request, $id)
     {
         $user = Session::get('user');
-        
+
         if ($user['role'] !== 'admin') {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
         }
-        
+
         $request->validate([
             'username' => 'required|string|max:100|unique:pengguna,username,' . $id,
             'nama' => 'required|string|max:200',
-            'role' => 'required|in:evaluator,operator',
+            'role' => 'required|in:admin,evaluator,operator',
             'perangkat_daerah_id' => 'required_if:role,operator|nullable|exists:perangkat_daerah,id',
             'is_active' => 'nullable|boolean',
         ]);
-        
+
+        $target = DB::table('pengguna')->where('id', $id)->first();
+        if (!$target) {
+            return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
+        }
+
+        $role     = $request->role;
+        $isActive = $request->is_active ? 1 : 0;
+
+        // Akun sendiri: role & status tidak boleh diubah (hindari mengunci diri)
+        if ($id == $user['id']) {
+            $role     = $target->role;
+            $isActive = $target->is_active;
+        }
+
+        // Jangan sampai admin aktif terakhir diturunkan / dinonaktifkan
+        if ($target->role === 'admin' && $target->is_active && ($role !== 'admin' || !$isActive)) {
+            if ($this->adminAktifLain($id) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak bisa: ini satu-satunya administrator aktif.',
+                ], 422);
+            }
+        }
+
         DB::table('pengguna')->where('id', $id)->update([
             'username' => $request->username,
             'nama' => $request->nama,
-            'role' => $request->role,
-            'perangkat_daerah_id' => $request->role === 'operator' ? $request->perangkat_daerah_id : null,
-            'is_active' => $request->is_active ? 1 : 0,
+            'role' => $role,
+            'perangkat_daerah_id' => $role === 'operator' ? $request->perangkat_daerah_id : null,
+            'is_active' => $isActive,
             'updated_at' => now(),
         ]);
-        
+
         return response()->json(['success' => true, 'message' => 'User berhasil diupdate.']);
     }
 
@@ -173,6 +207,10 @@ class AdminController extends Controller
     if (!$targetUser) {
         return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
     }
+
+    if ($targetUser->role === 'admin' && $targetUser->is_active && $this->adminAktifLain($id) === 0) {
+        return response()->json(['success' => false, 'message' => 'Tidak bisa menghapus satu-satunya administrator aktif.'], 422);
+    }
     
     // ⭐ MULAI TRANSAKSI DATABASE
     DB::beginTransaction();
@@ -194,6 +232,13 @@ class AdminController extends Controller
         if (!empty($percakapanIds)) {
             DB::table('pesan')->whereIn('percakapan_id', $percakapanIds)->delete();
             DB::table('percakapan')->whereIn('id', $percakapanIds)->delete();
+        }
+
+        // Admin / evaluator: tidak punya data OPD → cukup hapus akun
+        if ($targetUser->role !== 'operator') {
+            DB::table('pengguna')->where('id', $id)->delete();
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'User berhasil dihapus.']);
         }
         
         // 4. Hapus dokumen LKE yang diupload user ini

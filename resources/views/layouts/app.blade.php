@@ -1506,42 +1506,39 @@ tbody tr:hover td {
         <a href="{{ route('rekapan.hasil') }}"   class="nav-sub {{ request()->routeIs('rekapan.hasil*') ? 'active' : '' }}">Rekapan Hasil LKE AKIP</a>
       </div>
 
-      <div class="nav-divider"></div>
-      <div class="sidebar-label">Manajemen Pengguna</div>
+            <div class="nav-divider"></div>
 
-      <a href="{{ route('admin.landing') }}" class="nav-item {{ request()->routeIs('admin.landing') ? 'active' : '' }}">
-      <span class="nav-icon">🖼️</span>
-      <span class="nav-label">Landing Page</span>
-      </a>
+      @php
+        $jmlMenunggu = \Illuminate\Support\Facades\DB::table('pengguna')->where('status_daftar','menunggu')->count();
+        $grpManajemenOpen = request()->routeIs('admin.landing')
+          || request()->routeIs('admin.pengguna')
+          || request()->routeIs('admin.persetujuan')
+          || request()->routeIs('admin.klaster*')
+          || request()->routeIs('admin.periode-lke*')
+          || request()->routeIs('admin.arsip*');
+      @endphp
 
-      <a href="{{ route('admin.pengguna') }}" class="nav-item {{ request()->routeIs('admin.pengguna') ? 'active' : '' }}">
+      <a class="nav-item nav-group-toggle" onclick="toggleNav('grpManajemenPengguna', this)">
         <span class="nav-icon">👥</span>
-        <span class="nav-label">Kelola OPD</span>
-      </a>
-
-      <a href="{{ route('admin.persetujuan') }}" class="nav-item {{ request()->routeIs('admin.persetujuan') ? 'active' : '' }}">
-        <span class="nav-icon">✅</span>
-        <span class="nav-label">Persetujuan Akun</span>
-        @php $jmlMenunggu = \Illuminate\Support\Facades\DB::table('pengguna')->where('status_daftar','menunggu')->count(); @endphp
+        <span class="nav-label">Manajemen Pengguna</span>
         @if($jmlMenunggu > 0)
           <span class="nav-badge">{{ $jmlMenunggu }}</span>
         @endif
+        <span class="nav-arrow">▾</span>
       </a>
-
-      <a href="{{ route('admin.klaster') }}" class="nav-item {{ request()->routeIs('admin.klaster*') ? 'active' : '' }}">
-        <span class="nav-icon">🏷️</span>
-        <span class="nav-label">Kelola Klaster </span>
-      </a>
-
-      <a href="{{ route('admin.periode-lke') }}" class="nav-item {{ request()->routeIs('admin.periode-lke*') ? 'active' : '' }}">
-        <span class="nav-icon">⏱️</span>
-        <span class="nav-label">Periode LKE AKIP</span>
-      </a>
-
-      <a href="{{ route('admin.arsip') }}" class="nav-item {{ request()->routeIs('admin.arsip*') ? 'active' : '' }}">
-        <span class="nav-icon">🗂️</span>
-        <span class="nav-label">Arsip Dokumen</span>
-      </a>
+      <div class="nav-group-body {{ $grpManajemenOpen ? 'open' : '' }}" id="grpManajemenPengguna">
+        <a href="{{ route('admin.landing') }}" class="nav-sub {{ request()->routeIs('admin.landing') ? 'active' : '' }}">Landing Page</a>
+        <a href="{{ route('admin.pengguna') }}" class="nav-sub {{ request()->routeIs('admin.pengguna') ? 'active' : '' }}">Kelola OPD</a>
+        <a href="{{ route('admin.persetujuan') }}" class="nav-sub {{ request()->routeIs('admin.persetujuan') ? 'active' : '' }}">
+          Persetujuan Akun
+          @if($jmlMenunggu > 0)
+            <span class="nav-badge" style="margin-left:auto;">{{ $jmlMenunggu }}</span>
+          @endif
+        </a>
+        <a href="{{ route('admin.klaster') }}" class="nav-sub {{ request()->routeIs('admin.klaster*') ? 'active' : '' }}">Kelola Klaster</a>
+        <a href="{{ route('admin.periode-lke') }}" class="nav-sub {{ request()->routeIs('admin.periode-lke*') ? 'active' : '' }}">Periode LKE AKIP</a>
+        <a href="{{ route('admin.arsip') }}" class="nav-sub {{ request()->routeIs('admin.arsip*') ? 'active' : '' }}">Arsip Dokumen</a>
+      </div>
 
     @endif
 

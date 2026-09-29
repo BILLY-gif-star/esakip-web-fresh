@@ -190,6 +190,14 @@ public function index(Request $request)
         $predikat = $this->getPredikat($nilaiAkhir);
     }
 
+        // ⭐ BARU — ambil data pengisi (nama operator + asal OPD) untuk header lembar kerja
+    $pengisi = null;
+    if ($opdId) {
+        $pengisi = DB::table('lke_pengisi')
+            ->where('perangkat_daerah_id', $opdId)
+            ->where('tahun', $tahun)
+            ->first();
+    }
     $periodeLke = $this->cekPeriodeLke($tahun);
     return view('lke.index', compact(
         'user', 'tahun', 'opdId', 'listOpd', 'listTahun',
@@ -198,13 +206,54 @@ public function index(Request $request)
         'nilaiSubKomponen', 'catatanPerKriteria', 'dokumenPerKriteria',
         'nilaiAkhir', 'predikat',
         'nilaiOperatorPerSubKomponen', 'nilaiKomponenUtamaOperator', 'nilaiAkhirOperator',
-        'periodeLke'
+        'periodeLke', 'pengisi'
     ));
 }
 
   // ════════════════════════════════════════════════════
 //  SIMPAN — simpan nilai & catatan LKE AKIP
 // ════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
+    //  SIMPAN DATA PENGISI (Nama Operator + Asal OPD)
+    //  Khusus operator, tampil di kop/header lembar kerja
+    // ════════════════════════════════════════════════════
+    public function simpanPengisi(Request $request)
+    {
+        $user = Session::get('user');
+
+        if (!$user || $user['role'] !== 'operator') {
+            return back()->with('error', 'Hanya operator yang dapat mengisi data ini.');
+        }
+
+        $request->validate([
+            'tahun'          => 'required|integer',
+            'nama_operator'  => 'nullable|string|max:150',
+            'asal_operator'  => 'nullable|string|max:150',
+        ]);
+
+        $tahun = (int) $request->tahun;
+        $opdId = $user['daerah_id'];
+
+        // Boleh tetap disimpan walau periode ditutup — ini cuma data identitas,
+        // bukan nilai penilaian. Kalau kamu mau ikut dikunci juga, tambahkan
+        // pengecekan cekPeriodeLke() di sini seperti pada simpan().
+
+        DB::table('lke_pengisi')->updateOrInsert(
+            ['perangkat_daerah_id' => $opdId, 'tahun' => $tahun],
+            [
+                'nama_operator' => $request->nama_operator,
+                'asal_operator' => $request->asal_operator,
+                'updated_by'    => $user['id'],
+                'updated_at'    => now(),
+                'created_at'    => now(),
+            ]
+        );
+
+        return redirect()
+            ->route('evaluasi.lke', ['tahun' => $tahun, 'opd_id' => $opdId])
+            ->with('success', 'Data pengisi berhasil disimpan.');
+    }
+
 public function simpan(Request $request)
 {
     $user  = Session::get('user');
@@ -724,28 +773,36 @@ public function simpanNilai(Request $request)
             ->whereIn('kriteria_id', $kriteriaIds)
             ->get()->groupBy('kriteria_id');
  
-        $spreadsheet = new Spreadsheet();
+                $spreadsheet = new Spreadsheet();
         $spreadsheet->removeSheetByIndex(0); // buang sheet kosong default
- 
-// ── Sheet 1: Lembar Evaluator (mode 'operator' = self-assessment) ──
-$sheetOp = new Worksheet($spreadsheet, 'Lembar Evaluator');
-$spreadsheet->addSheet($sheetOp);
-$this->tulisLembarLkeKeSheet(
-    $sheetOp, 'operator', $namaOpd, $tahun,
-    $komponenUtama, $subKomponen, $kriteriaAll,
-    $penilaian, $catatanKriteria, $dokumenPerKriteria
-);
 
-// ── Sheet 2: Lembar Verifikator (mode 'evaluator' = nilai resmi) ──
-$sheetEv = new Worksheet($spreadsheet, 'Lembar Verifikator');
-$spreadsheet->addSheet($sheetEv);
-$this->tulisLembarLkeKeSheet(
-    $sheetEv, 'evaluator', $namaOpd, $tahun,
-    $komponenUtama, $subKomponen, $kriteriaAll,
-    $penilaian, $catatanKriteria, $dokumenPerKriteria
-);
- 
-        $spreadsheet->setActiveSheetIndex(1); // buka di tab Evaluator (nilai resmi) saat file dibuka
+        // ⭐ Hanya operator yang dibatasi — cuma dapat sheet miliknya sendiri
+        //    (self-assessment). Evaluator & admin tetap dapat kedua sheet.
+        $hanyaSheetOperator = $user['role'] === 'operator';
+
+        // ── Sheet 1: Lembar Evaluator (mode 'operator' = self-assessment) ──
+        $sheetOp = new Worksheet($spreadsheet, 'Lembar Evaluator');
+        $spreadsheet->addSheet($sheetOp);
+        $this->tulisLembarLkeKeSheet(
+            $sheetOp, 'operator', $namaOpd, $tahun,
+            $komponenUtama, $subKomponen, $kriteriaAll,
+            $penilaian, $catatanKriteria, $dokumenPerKriteria
+        );
+
+        if (!$hanyaSheetOperator) {
+            // ── Sheet 2: Lembar Verifikator (mode 'evaluator' = nilai resmi) ──
+            $sheetEv = new Worksheet($spreadsheet, 'Lembar Verifikator');
+            $spreadsheet->addSheet($sheetEv);
+            $this->tulisLembarLkeKeSheet(
+                $sheetEv, 'evaluator', $namaOpd, $tahun,
+                $komponenUtama, $subKomponen, $kriteriaAll,
+                $penilaian, $catatanKriteria, $dokumenPerKriteria
+            );
+
+            $spreadsheet->setActiveSheetIndex(1); // buka di tab Verifikator saat file dibuka
+        } else {
+            $spreadsheet->setActiveSheetIndex(0);
+        }
  
         // ── Output ──
         $filename = 'LKE_AKIP_' . str_replace(' ', '_', $namaOpd) . '_' . $tahun . '.xlsx';
@@ -772,11 +829,11 @@ $this->tulisLembarLkeKeSheet(
         $fieldJawaban = $mode === 'operator' ? 'jawaban_operator' : 'jawaban';
         $fieldNilai   = $mode === 'operator' ? 'nilai_operator'   : 'nilai';
  
-        if ($mode === 'operator') {
+                if ($mode === 'operator') {
             $header     = ['No', 'Komponen / Sub Komponen / Kriteria', 'Bobot', 'Jawaban (Predikat)', 'Nilai',
-                           'Catatan Operator', 'Komentar Verifikator', 'Evidence & Dokumen'];
-            $lastCol    = 'H';
-            $colDokumen = 'H'; // kolom tempat link dokumen ditulis di baris tambahan
+                           'Catatan Operator', 'Evidence & Dokumen'];
+            $lastCol    = 'G';
+            $colDokumen = 'G'; // kolom tempat link dokumen ditulis di baris tambahan
         } else {
             $header     = ['No', 'Komponen / Sub Komponen / Kriteria', 'Bobot', 'Jawaban (Predikat)', 'Nilai',
                            'Catatan Evaluasi', 'Catatan Operator', 'Komentar Verifikator', 'Evidence & Dokumen'];
@@ -869,11 +926,10 @@ $this->tulisLembarLkeKeSheet(
                     $sheet->setCellValue('A' . $row, $kr->nomor);
                     $sheet->setCellValue('B' . $row, '      ' . $kr->uraian);
  
-                    if ($mode === 'operator') {
+                     if ($mode === 'operator') {
                         $sheet->setCellValue('F' . $row, $catOperator);
-                        $sheet->setCellValue('G' . $row, $komentarVerif);
-                        $sheet->setCellValue('H' . $row, $evidenceText); // teks evidence non-link saja, link & dokumen menyusul di baris bawah
-                        $sheet->getStyle('F' . $row . ':H' . $row)->getAlignment()->setWrapText(true);
+                        $sheet->setCellValue('G' . $row, $evidenceText); // teks evidence non-link saja, link & dokumen menyusul di baris bawah
+                        $sheet->getStyle('F' . $row . ':G' . $row)->getAlignment()->setWrapText(true);
                     } else {
                         $sheet->setCellValue('G' . $row, $catOperator);
                         $sheet->setCellValue('H' . $row, $komentarVerif);
@@ -950,9 +1006,9 @@ $this->tulisLembarLkeKeSheet(
         $sheet->getColumnDimension('D')->setWidth(10);
         $sheet->getColumnDimension('E')->setWidth(9);
         $sheet->getColumnDimension('F')->setWidth(26);
-        $sheet->getColumnDimension('G')->setWidth(26);
-        $sheet->getColumnDimension('H')->setWidth(28);
+        $sheet->getColumnDimension('G')->setWidth($mode === 'operator' ? 55 : 26);
         if ($mode === 'evaluator') {
+            $sheet->getColumnDimension('H')->setWidth(28);
             $sheet->getColumnDimension('I')->setWidth(28);
         }
  

@@ -202,11 +202,9 @@
 
                 {{-- ── KOLOM AKSI ── --}}
                 <td>
-                    @if($u->role === 'admin')
-                        <button class="btn-icon" onclick="openResetModal({{ $u->id }}, '{{ addslashes($u->nama) }}')" title="Reset Password">🔑</button>
-                    @else
-                        <button class="btn-icon" onclick="openEditModal({{ $u->id }})" title="Edit">✏️</button>
-                        <button class="btn-icon" onclick="openResetModal({{ $u->id }}, '{{ addslashes($u->nama) }}')" title="Reset Password">🔑</button>
+                    <button class="btn-icon" onclick="openEditModal({{ $u->id }})" title="Edit">✏️</button>
+                    <button class="btn-icon" onclick="openResetModal({{ $u->id }}, '{{ addslashes($u->nama) }}')" title="Reset Password">🔑</button>
+                    @if($u->id != session('user.id'))
                         <button class="btn-icon" onclick="deleteUser({{ $u->id }}, '{{ addslashes($u->nama) }}')" title="Hapus" style="color:#ef4444;">🗑️</button>
                     @endif
                 </td>
@@ -244,6 +242,7 @@
                 <select id="role" name="role" class="form-select" onchange="toggleOpdField()">
                     <option value="operator">Operator</option>
                     <option value="evaluator">Evaluator</option>
+                    <option value="admin">Administrator</option>
                 </select>
             </div>
             <div class="form-group" id="opd_group">

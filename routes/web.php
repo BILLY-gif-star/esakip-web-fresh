@@ -1,6 +1,5 @@
 <?php
 
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\AuthController;
@@ -25,16 +24,6 @@ use App\Http\Controllers\PerjanjianTemplateController;
 use App\Http\Controllers\PerjanjianDokumenController;
 use App\Http\Controllers\LheAkipController;
 use App\Http\Controllers\LheDokumenController;
-
-
-Route::get('/debug-env', function () {
-    return [
-        'app_key_via_env' => env('APP_KEY'),
-        'app_key_via_config' => config('app.key'),
-        'env_file_exists' => file_exists(base_path('.env')),
-        'env_file_readable' => is_readable(base_path('.env')),
-    ];
-});
 
 // ════════════════════════════════════════════════════════════
 //  PUBLIK — tidak butuh login
@@ -89,9 +78,9 @@ Route::middleware('auth.esakip')->group(function () {
     //  Upload/hapus: admin only | Unduh & rekap: semua
     // ════════════════════════════════════════════════════════
     Route::middleware('role.admin')->group(function () {
-        Route::post('/dokumen-hasil/upload',    [DokumenHasilController::class, 'upload'])->name('dokumen.hasil.upload');
-        Route::post('/dokumen-hasil/hapus/{id}',[DokumenHasilController::class, 'hapus'])->name('dokumen.hasil.hapus');
-        Route::get('/dokumen-hasil/list',       [DokumenHasilController::class, 'listPerOpd'])->name('dokumen.hasil.list');
+        Route::post('/dokumen-hasil/upload',     [DokumenHasilController::class, 'upload'])->name('dokumen.hasil.upload');
+        Route::post('/dokumen-hasil/hapus/{id}', [DokumenHasilController::class, 'hapus'])->name('dokumen.hasil.hapus');
+        Route::get('/dokumen-hasil/list',        [DokumenHasilController::class, 'listPerOpd'])->name('dokumen.hasil.list');
     });
     Route::get('/dokumen-hasil/unduh/{id}', [DokumenHasilController::class, 'unduh'])->name('dokumen.hasil.unduh');
     Route::get('/rekap-hasil-opd',          [DokumenHasilController::class, 'rekapOpd'])->name('rekap.hasil.opd');
@@ -104,9 +93,8 @@ Route::middleware('auth.esakip')->group(function () {
         Route::get('/rekapan-hasil/download-excel', [RekapanHasilLkeController::class, 'downloadExcel'])->name('rekapan.hasil.excel');
     });
 
-
     // ════════════════════════════════════════════════════════
-    //  LHE AKIP (admin only)               ← TEMPEL DI SINI
+    //  LHE AKIP (admin only)
     // ════════════════════════════════════════════════════════
     Route::middleware('role.admin')->prefix('lhe-akip')->name('lhe-akip.')->group(function () {
         Route::get('/',              [LheAkipController::class, 'index'])->name('index');
@@ -169,8 +157,6 @@ Route::middleware('auth.esakip')->group(function () {
         Route::post('/hapus-dokumen/{id}',   [KlasterController::class, 'hapusDokumen']);   // fallback non-DELETE
         Route::get('/rekap',                 [KlasterController::class, 'rekap'])->name('rekap');
         Route::get('/hasil-lke-gabungan',    [KlasterEvaluasiController::class, 'hasilLkeGabungan'])->name('hasil.lke.gabungan');
-
-     
     });
 
     // ════════════════════════════════════════════════════════
@@ -185,14 +171,16 @@ Route::middleware('auth.esakip')->group(function () {
         Route::get('/lke/dokumen',         [LkeController::class, 'daftarDokumen'])->name('lke.dokumen.list');
         Route::get('/lke',                 [LkeController::class, 'index'])->name('lke');
         Route::post('/lke/simpan',         [LkeController::class, 'simpan'])->name('lke.simpan');
+        Route::post('/lke/simpan-pengisi', [LkeController::class, 'simpanPengisi'])->name('lke.simpan-pengisi');
         Route::post('/lke/simpan-nilai',   [LkeController::class, 'simpanNilai'])->name('lke.simpan.nilai');
         Route::get('/lke/rekap',           [LkeController::class, 'rekap'])->name('lke.rekap');
         Route::post('/lke/upload-dokumen', [LkeController::class, 'uploadDokumen'])->name('lke.upload.dokumen');
         Route::get('/lke/dokumen/{id}',    [LkeController::class, 'lihatDokumen'])->name('lke.lihat.dokumen');
         Route::delete('/lke/dokumen/{id}', [LkeController::class, 'hapusDokumen'])->name('lke.hapus.dokumen');
-        Route::post('/lke/dokumen/{id}',   [LkeController::class, 'hapusDokumen']);   
-        Route::get('/lke/export-excel', [LkeController::class, 'exportExcel'])->name('lke.export');
-            // LHE Dokumen
+        Route::post('/lke/dokumen/{id}',   [LkeController::class, 'hapusDokumen']);
+        Route::get('/lke/export-excel',    [LkeController::class, 'exportExcel'])->name('lke.export');
+
+        // LHE Dokumen
         Route::get('/lhe-dokumen',            [LheDokumenController::class, 'index'])->name('lhe-dokumen');
         Route::post('/lhe-dokumen/upload',    [LheDokumenController::class, 'upload'])->name('lhe-dokumen.upload');
         Route::get('/lhe-dokumen/{id}/lihat', [LheDokumenController::class, 'lihat'])->name('lhe-dokumen.lihat');
@@ -220,7 +208,7 @@ Route::middleware('auth.esakip')->group(function () {
         Route::post('/upload-cascading',       [PerjanjianCascadingController::class, 'upload'])->name('upload.cascading');
         Route::post('/review-cascading/{id}',  [PerjanjianCascadingController::class, 'review'])->name('review.cascading');
         Route::delete('/hapus-cascading/{id}', [PerjanjianCascadingController::class, 'hapus'])->name('hapus.cascading');
-         Route::post('/upload-dual', [PerjanjianController::class, 'uploadDual'])->name('upload.dual'); // ⭐ BARU
+        Route::post('/upload-dual',            [PerjanjianController::class, 'uploadDual'])->name('upload.dual');
         Route::get('/{jenis}',                 [PerjanjianController::class, 'index'])->name('index');
         Route::post('/upload-template',        [PerjanjianTemplateController::class, 'upload'])->name('upload.template');
         Route::get('/download-template/{id}',  [PerjanjianTemplateController::class, 'download'])->name('download.template');
@@ -240,41 +228,41 @@ Route::middleware('auth.esakip')->group(function () {
     // ════════════════════════════════════════════════════════
     Route::prefix('pengukuran')->name('pengukuran.')->group(function () {
         // Periodik
-        Route::get('/periodik',                      [PengukuranPeriodikController::class, 'index'])->name('periodik');
-        Route::post('/periodik/simpan',              [PengukuranPeriodikController::class, 'simpan'])->name('periodik.simpan');
-        Route::put('/periodik/update-all',           [PengukuranPeriodikController::class, 'updateAll'])->name('periodik.update-all');
-        Route::delete('/periodik/hapus/{id}',        [PengukuranPeriodikController::class, 'hapus'])->name('periodik.hapus');
-        Route::get('/periodik/download/{id}',        [PengukuranPeriodikController::class, 'download'])->name('periodik.download');
-        Route::get('/periodik/export-excel',          [PengukuranPeriodikController::class, 'exportExcel'])->name('periodik.export');
+        Route::get('/periodik',                [PengukuranPeriodikController::class, 'index'])->name('periodik');
+        Route::post('/periodik/simpan',        [PengukuranPeriodikController::class, 'simpan'])->name('periodik.simpan');
+        Route::put('/periodik/update-all',     [PengukuranPeriodikController::class, 'updateAll'])->name('periodik.update-all');
+        Route::delete('/periodik/hapus/{id}',  [PengukuranPeriodikController::class, 'hapus'])->name('periodik.hapus');
+        Route::get('/periodik/download/{id}',  [PengukuranPeriodikController::class, 'download'])->name('periodik.download');
+        Route::get('/periodik/export-excel',   [PengukuranPeriodikController::class, 'exportExcel'])->name('periodik.export');
 
         // Edit indikator (AJAX)
-        Route::put('/periodik/{id}/update',          [PengukuranPeriodikController::class, 'update'])->name('periodik.update');
-        Route::post('/periodik/{id}/update',         [PengukuranPeriodikController::class, 'updateIndikator'])->name('periodik.update-indikator');
-        Route::delete('/periodik/{id}/delete',       [PengukuranPeriodikController::class, 'deleteIndikator'])->name('periodik.delete-indikator');
-        Route::get('/periodik/{id}/data',            [PengukuranPeriodikController::class, 'getData'])->name('periodik.data');
+        Route::put('/periodik/{id}/update',    [PengukuranPeriodikController::class, 'update'])->name('periodik.update');
+        Route::post('/periodik/{id}/update',   [PengukuranPeriodikController::class, 'updateIndikator'])->name('periodik.update-indikator');
+        Route::delete('/periodik/{id}/delete', [PengukuranPeriodikController::class, 'deleteIndikator'])->name('periodik.delete-indikator');
+        Route::get('/periodik/{id}/data',      [PengukuranPeriodikController::class, 'getData'])->name('periodik.data');
 
         // Sasaran
-        Route::post('/periodik/update-sasaran',      [PengukuranPeriodikController::class, 'updateSasaran'])->name('periodik.update-sasaran');
-        Route::post('/periodik/delete-sasaran',      [PengukuranPeriodikController::class, 'deleteSasaran'])->name('periodik.delete-sasaran');
+        Route::post('/periodik/update-sasaran', [PengukuranPeriodikController::class, 'updateSasaran'])->name('periodik.update-sasaran');
+        Route::post('/periodik/delete-sasaran', [PengukuranPeriodikController::class, 'deleteSasaran'])->name('periodik.delete-sasaran');
 
         // Minimal
-        Route::get('/minimal',                       [PengukuranController::class, 'index'])->name('minimal');
-        Route::post('/minimal/simpan',               [PengukuranController::class, 'simpan'])->name('minimal.simpan');
-        Route::get('/minimal/download/{ikuId}',      [PengukuranController::class, 'download'])->name('pengukuran.download');
+        Route::get('/minimal',                  [PengukuranController::class, 'index'])->name('minimal');
+        Route::post('/minimal/simpan',          [PengukuranController::class, 'simpan'])->name('minimal.simpan');
+        Route::get('/minimal/download/{ikuId}', [PengukuranController::class, 'download'])->name('pengukuran.download');
     });
 
     // ════════════════════════════════════════════════════════
     //  JUKNIS
     // ════════════════════════════════════════════════════════
     Route::prefix('juknis')->name('juknis.')->group(function () {
-        Route::get('/',              [JuknisController::class, 'index'])->name('index');
-        Route::get('/user',          [JuknisController::class, 'userIndex'])->name('user');
-        Route::post('/upload',       [JuknisController::class, 'upload'])->name('upload');
-        Route::post('/update/{id}',  [JuknisController::class, 'update'])->name('update');
-        Route::post('/delete/{id}',  [JuknisController::class, 'delete'])->name('delete');
-        Route::delete('/delete/{id}', [JuknisController::class, 'delete']); 
-        Route::get('/download/{id}', [JuknisController::class, 'download'])->name('download');
-        Route::get('/preview/{id}',  [JuknisController::class, 'preview'])->name('preview');
+        Route::get('/',               [JuknisController::class, 'index'])->name('index');
+        Route::get('/user',           [JuknisController::class, 'userIndex'])->name('user');
+        Route::post('/upload',        [JuknisController::class, 'upload'])->name('upload');
+        Route::post('/update/{id}',   [JuknisController::class, 'update'])->name('update');
+        Route::post('/delete/{id}',   [JuknisController::class, 'delete'])->name('delete');
+        Route::delete('/delete/{id}', [JuknisController::class, 'delete']);
+        Route::get('/download/{id}',  [JuknisController::class, 'download'])->name('download');
+        Route::get('/preview/{id}',   [JuknisController::class, 'preview'])->name('preview');
     });
 
     // ════════════════════════════════════════════════════════
@@ -282,9 +270,19 @@ Route::middleware('auth.esakip')->group(function () {
     // ════════════════════════════════════════════════════════
     Route::middleware('role.admin')->prefix('admin')->name('admin.')->group(function () {
 
-         Route::get('/landing', [LandingController::class, 'admin'])->name('landing');
-         Route::post('/landing/{key}', [LandingController::class, 'update'])->name('landing.update');
-         Route::post('/landing/{key}/reset', [LandingController::class, 'reset'])->name('landing.reset');
+        // ── Kelola Landing Page ───────────────────────────────
+        // URL: /admin/landing ...  | Nama: admin.landing ...
+        // (prefix "admin" & name "admin." sudah dari group, jangan ditulis lagi)
+        Route::get('/landing', [LandingController::class, 'admin'])->name('landing');
+
+        // Galeri slide — HARUS di atas /landing/{key}
+        Route::post('/landing/slides',           [LandingController::class, 'slideStore'])->name('landing.slides.store');
+        Route::put('/landing/slides/{slide}',    [LandingController::class, 'slideUpdate'])->name('landing.slides.update');
+        Route::delete('/landing/slides/{slide}', [LandingController::class, 'slideDestroy'])->name('landing.slides.destroy');
+
+        // Slot gambar tunggal (logo & foto latar)
+        Route::post('/landing/{key}',       [LandingController::class, 'update'])->name('landing.update');
+        Route::post('/landing/{key}/reset', [LandingController::class, 'reset'])->name('landing.reset');
 
         // ── Manajemen Pengguna ────────────────────────────────
         Route::get('/pengguna',                      [AdminController::class, 'pengguna'])->name('pengguna');
@@ -305,13 +303,12 @@ Route::middleware('auth.esakip')->group(function () {
         Route::delete('/arsip/hapus/{id}', [ArsipController::class, 'hapus'])->name('arsip.hapus');
 
         // ── Kelola Klaster OPD ────────────────────────────────
-        Route::get('/klaster',           [AdminController::class, 'kelolaKlaster'])->name('klaster');
+        Route::get('/klaster',               [AdminController::class, 'kelolaKlaster'])->name('klaster');
         Route::post('/klaster/{id}/klaster', [AdminController::class, 'updateKlasterOpd'])->name('klaster.update');
         Route::post('/klaster/{id}/tugas',   [AdminController::class, 'updateTugasOpd'])->name('klaster.tugas');
         Route::get('/klaster/{id}/data',     [AdminController::class, 'getOpdKlaster'])->name('klaster.data');
 
         // ── Assign OPD ke Evaluator ───────────────────────────
-        // ✅ HANYA di sini — tidak ada duplikat di group klaster
         // URL: GET  /admin/evaluator/{id}/assign-opd
         // URL: POST /admin/evaluator/{id}/assign-opd
         // URL: GET  /admin/evaluator/{id}/assigned-opd
@@ -319,12 +316,9 @@ Route::middleware('auth.esakip')->group(function () {
         Route::post('/evaluator/{id}/assign-opd',  [AdminController::class, 'storeAssignOpdEvaluator'])->name('evaluator.store-assign-opd');
         Route::get('/evaluator/{id}/assigned-opd', [AdminController::class, 'getAssignedOpdEvaluator'])->name('evaluator.assigned-opd');
 
-
-                // ── Periode Pengisian LKE ──────────────────────────────
-        Route::get('/periode-lke',   [AdminController::class, 'periodeLke'])->name('periode-lke');
-        Route::post('/periode-lke',  [AdminController::class, 'simpanPeriodeLke'])->name('periode-lke.simpan');
+        // ── Periode Pengisian LKE ─────────────────────────────
+        Route::get('/periode-lke',  [AdminController::class, 'periodeLke'])->name('periode-lke');
+        Route::post('/periode-lke', [AdminController::class, 'simpanPeriodeLke'])->name('periode-lke.simpan');
     });
 
-    
-
-}); 
+});

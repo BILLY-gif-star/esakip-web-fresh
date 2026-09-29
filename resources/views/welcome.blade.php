@@ -683,65 +683,58 @@
       </div>
     </section>
 
-    <section id="galeri" style="padding-top: 32px; padding-bottom: 32px;">
-      <div class="slideshow" id="slideshow">
-        <div class="slide active" style="background-image: url('{{ $img['gallery_1'] }}');">
-          <div class="slide-caption">
-            <span class="slide-tag">Rapat Koordinasi</span>
-            <h3>Evaluasi Kinerja Perangkat Daerah se-NTT</h3>
-          </div>
-        </div>
-        <div class="slide" style="background-image: url('{{ $img['gallery_2'] }}');">
-          <div class="slide-caption">
-            <span class="slide-tag">Cascading Kinerja</span>
-            <h3>Sinkronisasi Indikator OPD dengan Sasaran Provinsi</h3>
-          </div>
-        </div>
-        <div class="slide" style="background-image: url('{{ $img['gallery_3'] }}');">
-          <div class="slide-caption">
-            <span class="slide-tag">Pelaporan LKIP</span>
-            <h3>Dokumentasi Akuntabilitas Kinerja Terpadu</h3>
-          </div>
-        </div>
-
-        <button class="slide-nav prev" onclick="changeSlide(-1)" aria-label="Sebelumnya">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <button class="slide-nav next" onclick="changeSlide(1)" aria-label="Berikutnya">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-
-        <div class="slide-dots">
-          <button class="dot active" onclick="goToSlide(0)" aria-label="Slide 1"></button>
-          <button class="dot" onclick="goToSlide(1)" aria-label="Slide 2"></button>
-          <button class="dot" onclick="goToSlide(2)" aria-label="Slide 3"></button>
+    @if($slides->isNotEmpty())
+<section id="galeri" style="padding-top: 32px; padding-bottom: 32px;">
+  <div class="slideshow" id="slideshow">
+    @foreach($slides as $s)
+      <div class="slide {{ $loop->first ? 'active' : '' }}" style="background-image: url('{{ $s->image_url }}');">
+        <div class="slide-caption">
+          <span class="slide-tag">{{ $s->tag }}</span>
+          <h3>{{ $s->title }}</h3>
         </div>
       </div>
-    </section>
+    @endforeach
 
-    <script>
-      let currentSlide = 0;
-      const slides = document.querySelectorAll('#slideshow .slide');
-      const dots = document.querySelectorAll('#slideshow .dot');
-      let slideTimer;
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    @if($slides->count() > 1)
+      <button class="slide-nav prev" onclick="changeSlide(-1)" aria-label="Sebelumnya">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="slide-nav next" onclick="changeSlide(1)" aria-label="Berikutnya">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
 
-      function showSlide(index) {
-        slides.forEach(s => s.classList.remove('active'));
-        dots.forEach(d => d.classList.remove('active'));
-        currentSlide = (index + slides.length) % slides.length;
-        slides[currentSlide].classList.add('active');
-        dots[currentSlide].classList.add('active');
-      }
-      function changeSlide(dir) { showSlide(currentSlide + dir); resetTimer(); }
-      function goToSlide(i) { showSlide(i); resetTimer(); }
-      function resetTimer() {
-        clearInterval(slideTimer);
-        if (!reduceMotion) slideTimer = setInterval(() => showSlide(currentSlide + 1), 5000);
-      }
-      if (slides.length) resetTimer();
-    </script>
+      <div class="slide-dots">
+        @foreach($slides as $s)
+          <button class="dot {{ $loop->first ? 'active' : '' }}" onclick="goToSlide({{ $loop->index }})" aria-label="Slide {{ $loop->iteration }}"></button>
+        @endforeach
+      </div>
+    @endif
+  </div>
+</section>
 
+<script>
+  let currentSlide = 0;
+  const slides = document.querySelectorAll('#slideshow .slide');
+  const dots = document.querySelectorAll('#slideshow .dot');
+  let slideTimer;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function showSlide(index) {
+    slides.forEach(s => s.classList.remove('active'));
+    dots.forEach(d => d.classList.remove('active'));
+    currentSlide = (index + slides.length) % slides.length;
+    slides[currentSlide].classList.add('active');
+    if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+  }
+  function changeSlide(dir) { showSlide(currentSlide + dir); resetTimer(); }
+  function goToSlide(i) { showSlide(i); resetTimer(); }
+  function resetTimer() {
+    clearInterval(slideTimer);
+    if (!reduceMotion && slides.length > 1) slideTimer = setInterval(() => showSlide(currentSlide + 1), 5000);
+  }
+  resetTimer();
+</script>
+@endif
     <section id="faq">
       <div class="section-header">
         <div class="section-eyebrow">Pertanyaan Umum</div>

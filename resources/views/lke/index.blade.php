@@ -626,6 +626,62 @@
   </div>
 </div>
 
+@if($opdId)
+<div class="lke-card">
+  <div class="lke-card-header">
+    <div style="font-size:14px;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:8px;">
+      🧾 Data Pengisi
+    </div>
+    @if($isOperator)
+      <span class="badge badge-dim">Isian Anda</span>
+    @endif
+  </div>
+  <div class="lke-card-body">
+    @if($isOperator)
+      <form method="POST" action="{{ route('evaluasi.lke.simpan-pengisi') }}">
+        @csrf
+        <input type="hidden" name="tahun" value="{{ $tahun }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+          <div>
+            <label class="dk-label">Nama Evaluator</label>
+            <input type="text" name="nama_operator" class="dk-input"
+                   placeholder="Nama lengkap yang mengisi"
+                   value="{{ old('nama_operator', $pengisi->nama_operator ?? '') }}">
+          </div>
+          <div>
+            <label class="dk-label">Asal Evaluator (OPD)</label>
+            <input type="text" name="asal_operator" class="dk-input"
+                   placeholder="Contoh: Biro Organisasi Setda"
+                   value="{{ old('asal_operator', $pengisi->asal_operator ?? session('user.nama_daerah') ?? '') }}">
+          </div>
+          <button type="submit" class="btn btn-acc" style="padding:10px 18px;white-space:nowrap;">
+            💾 Simpan
+          </button>
+        </div>
+      </form>
+    @else
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div class="dk-label">Nama Evaluator</div>
+          <div style="font-size:14px;font-weight:600;color:var(--t1);margin-top:4px;">
+            {{ $pengisi->nama_operator ?? '—' }}
+          </div>
+        </div>
+        <div>
+          <div class="dk-label">Asal Evaluator</div>
+          <div style="font-size:14px;font-weight:600;color:var(--t1);margin-top:4px;">
+            {{ $pengisi->asal_operator ?? '—' }}
+          </div>
+        </div>
+      </div>
+      @if(!$pengisi)
+        <div style="font-size:11.5px;color:var(--t3);margin-top:8px;">Evaluator belum mengisi data ini.</div>
+      @endif
+    @endif
+  </div>
+</div>
+@endif
+
 @if(!$opdId)
   <div class="empty-lke">
     <div style="font-size:44px;margin-bottom:14px;opacity:.35;">📊</div>
